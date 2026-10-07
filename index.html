@@ -53,6 +53,9 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 .pet.wobble{animation:wobble 1.4s steps(4) infinite}
 .pet.sleep{animation:breathe 2.4s steps(2) infinite}
 .pet.jump{animation:jump .5s steps(3) 2}
+.pet.grump{animation:grump 1.6s steps(2) infinite}
+@keyframes grump{50%{transform:translateX(-3px) rotate(-4deg)}}
+.typelabel{position:absolute;left:0;bottom:2px;font-size:.6rem;background:rgba(255,255,255,.7);border-radius:4px;padding:0 5px;max-width:48%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @keyframes hop{50%{transform:translateY(-6px)}}
 @keyframes wobble{25%{transform:rotate(-8deg)}75%{transform:rotate(8deg)}}
 @keyframes breathe{50%{transform:scaleY(.95) translateY(2px)}}
@@ -233,6 +236,7 @@ textarea.in{min-height:70px;font-size:.9rem;resize:vertical}
         <div class="stage-area" id="stageArea">
           <div class="bubble" id="bubble"></div>
           <div class="pet" id="pet" role="img"></div>
+          <div class="typelabel" id="typeLabel"></div>
         </div>
         <div class="meters" id="meters"></div>
         <div class="xp"><div class="xpbar"><i id="xpfill"></i></div><span id="xptext"></span></div>
@@ -251,7 +255,7 @@ textarea.in{min-height:70px;font-size:.9rem;resize:vertical}
   <section id="tab-quest" hidden></section>
   <section id="tab-settings" hidden></section>
 
-  <p class="note">記録はこの端末（ブラウザ）の中だけに保存されます。<br>医療・カウンセリングの代わりではなく、自分磨きを楽しく続けるための記録ゲームです。</p>
+  <p class="note">記録はこの端末（ブラウザ）の中だけに保存されます。<br>医療・カウンセリングの代わりではなく、自分磨きを楽しく続けるための記録ゲームです。<br>🕯️の問いは すこし深め。つらければ とばしてOK。深い傷は 専門家と いっしょに。</p>
 </main>
 
 <div class="modal" id="modal" hidden role="dialog" aria-modal="true" aria-labelledby="mTitle">
@@ -341,22 +345,50 @@ function pixSVG(grid, col, extra){
   for(const k in px){ const [r,c]=k.split(','); s+=`<rect x="${c}" y="${r}" width="1.04" height="1.04" fill="${px[k]}"/>`; }
   return `<svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true">${s}</svg>`;
 }
-function petSVG(si, mood){
+function petSVG(si, mood, type){
   const st=STAGES[si], sp=SPRITES[st.sprite], ink='#4A3F55';
-  const col={o:ink,b:st.body,a:st.acc,y:'#FFD36B',r:'#FF9A80',g:'#7CCAA2',w:'#FFFFFF'};
+  const tp0=type||currentType();
+  const col={o:ink,b:(sp.face&&tp0&&tp0.body)||st.body,a:st.acc,y:'#FFD36B',r:'#FF9A80',g:'#7CCAA2',w:'#FFFFFF'};
   return pixSVG(sp.grid, col, px=>{
     const f=sp.face; if(!f) return;
     const set=(r,c,v)=>{ px[r+','+c]=v; };
     f.eyes.forEach(([r,c],i)=>{
       if(mood==='happy'){ set(r,c-1,ink); set(r-1,c,ink); set(r,c+1,ink); }
       else if(mood==='sleepy'){ set(r,i?c:c-1,ink); set(r,i?c+1:c,ink); }
+      else if(mood==='grumpy'){ set(r,c,ink); set(r-1,i?c+1:c-1,ink); set(r-2,i?c+2:c-2,ink); }
       else { set(r,c,ink); set(r-1,c,ink); }
     });
-    f.cheeks.forEach(([r,c])=>set(r,c,'#FF9FB5'));
+    f.cheeks.forEach(([r,c],i)=>{ set(r,c,mood==='grumpy'?'#FF8A9A':'#FF9FB5'); if(mood==='grumpy') set(r,i?c-1:c+1,'#FF8A9A'); });
     const [mr,mc]=f.mouth;
     if(mood==='happy'){ [mc-1,mc,mc+1,mc+2].forEach(c=>set(mr-1,c,ink)); set(mr,mc,'#FF8A7A'); set(mr,mc+1,'#FF8A7A'); }
     else if(mood==='sleepy'){ set(mr,mc,ink); set(mr,mc+1,ink); }
+    else if(mood==='grumpy'){ set(mr,mc-1,ink); set(mr-1,mc,ink); set(mr-1,mc+1,ink); set(mr,mc+2,ink); }
     else { set(mr-1,mc-1,ink); set(mr,mc,ink); set(mr,mc+1,ink); set(mr-1,mc+2,ink); }
+    // タイプごとの かざり
+    const tp=type||currentType(); const er=f.eyes[0][0], L=f.eyes[0][1], R=f.eyes[1][1];
+    const A={
+      ribbon:()=>{ const c='#F27E9C'; [[er-4,2],[er-4,3],[er-3,2],[er-3,3],[er-5,3],[er-5,4],[er-3,4],[er-4,4]].forEach(([r,cc])=>set(r,cc,c)); set(er-4,3,'#B8405E'); },
+      glasses:()=>{ [L,R].forEach(c=>{ [[er-2,c-1],[er-2,c],[er-2,c+1],[er+1,c-1],[er+1,c],[er+1,c+1],[er-1,c-1],[er,c-1],[er-1,c+1],[er,c+1]].forEach(([r,cc])=>set(r,cc,'#6A5A80')); }); set(er-1,7,'#6A5A80'); set(er-1,8,'#6A5A80'); },
+      hat:()=>{ for(let c=4;c<=11;c++) set(er-4,c,'#5B7FBF'); for(let c=6;c<=9;c++){ set(er-5,c,'#5B7FBF'); set(er-6,c,'#5B7FBF'); } set(er-6,6,'#FFD36B'); },
+      flower:()=>{ [[er-4,11],[er-6,11],[er-5,10],[er-5,12]].forEach(([r,cc])=>set(r,cc,'#F59BB0')); set(er-5,11,'#FFD36B'); },
+      star:()=>{ [[er-6,3],[er-5,2],[er-5,3],[er-5,4],[er-4,3]].forEach(([r,cc])=>set(r,cc,'#FFD36B')); },
+      scarf:()=>{ for(let c=4;c<=11;c++) set(mr+2,c,'#E8857A'); set(mr+3,10,'#E8857A'); set(mr+4,10,'#E8857A'); },
+      leaf:()=>{ [[er-5,4],[er-6,5],[er-5,5],[er-4,5],[er-5,6]].forEach(([r,cc])=>set(r,cc,'#7CCAA2')); set(er-4,6,'#4F9A74'); },
+      crown:()=>{ [5,7,8,10].forEach(c=>set(er-6,c,'#E8B84A')); for(let c=5;c<=10;c++){ set(er-5,c,'#E8B84A'); set(er-4,c,'#E8B84A'); } set(er-5,7,'#F27E9C'); },
+      headphones:()=>{ [[er-3,2],[er-2,2],[er-1,2],[er,2],[er-3,13],[er-2,13],[er-1,13],[er,13]].forEach(([r,cc])=>set(r,cc,'#6A5A80')); [[er-4,3],[er-5,4],[er-5,11],[er-4,12]].forEach(([r,cc])=>set(r,cc,'#6A5A80')); for(let c=5;c<=10;c++) set(er-6,c,'#6A5A80'); },
+      bandana:()=>{ for(let c=4;c<=11;c++) set(er-4,c,'#86B7E6'); set(er-4,6,'#fff'); set(er-4,9,'#fff'); },
+      sprout:()=>{ set(er-5,8,'#7CCAA2'); set(er-6,7,'#7CCAA2'); set(er-6,9,'#7CCAA2'); set(er-7,8,'#4F9A74'); },
+      bell:()=>{ [[er-6,12],[er-5,11],[er-5,12],[er-5,13],[er-4,12]].forEach(([r,cc])=>set(r,cc,'#E8B84A')); },
+      moon:()=>{ [[er-6,3],[er-5,2],[er-4,2],[er-3,3]].forEach(([r,cc])=>set(r,cc,'#FFD36B')); },
+      sun:()=>{ [[er-6,12],[er-5,11],[er-5,12],[er-5,13],[er-4,12]].forEach(([r,cc])=>set(r,cc,'#F6B07C')); set(er-5,12,'#FFD36B'); },
+      heart:()=>{ [[er-6,11],[er-6,13],[er-5,11],[er-5,12],[er-5,13],[er-4,12]].forEach(([r,cc])=>set(r,cc,'#F27E9C')); },
+      pen:()=>{ [[mr+1,13],[mr,13],[mr-1,13],[mr-2,13]].forEach(([r,cc])=>set(r,cc,'#5B7FBF')); set(mr+2,13,'#4A3F55'); },
+      book:()=>{ for(let c=11;c<=13;c++){ set(mr+1,c,'#B59AE6'); set(mr+2,c,'#B59AE6'); } set(mr+1,12,'#fff'); },
+      shield:()=>{ [[mr,1],[mr,2],[mr+1,1],[mr+1,2],[mr+2,1],[mr+2,2],[mr+3,1]].forEach(([r,cc])=>set(r,cc,'#86B7E6')); set(mr+1,1,'#E8B84A'); },
+      cloud:()=>{ for(let c=2;c<=5;c++) set(er-6,c,'#DDE3F0'); set(er-5,3,'#DDE3F0'); set(er-5,4,'#DDE3F0'); },
+      cup:()=>{ for(let c=1;c<=3;c++){ set(mr+1,c,'#F6B07C'); set(mr+2,c,'#F6B07C'); } set(mr,2,'#DDE3F0'); }
+    };
+    if(sp.face && tp && A[tp.acc]) A[tp.acc]();
   });
 }
 function monSVG(color){
@@ -394,7 +426,7 @@ const uid = () => Math.random().toString(36).slice(2,9);
 const str = (v,max) => typeof v==='string' ? v.trim().slice(0,max) : '';
 const esc = s => String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function defaults(){
-  return { v:2, title:'エゴ育成ゲーム', pet:'エゴちゃん', named:false, setup:false, start:todayK(), seen:0, goal:CONFIG.goal, sound:true, weekly:{}, notify:{on:false, time:'21:00', last:''},
+  return { v:2, title:'エゴ育成ゲーム', pet:'エゴちゃん', named:false, setup:false, start:todayK(), seen:0, goal:CONFIG.goal, sound:true, typesSeen:[], weekly:{}, notify:{on:false, time:'21:00', last:''},
     genres: CONFIG.genres.map(g=>({id:uid(), name:g.name, color:g.color, items:g.items.map(n=>({id:uid(), name:n}))})),
     questPool: CONFIG.quests.slice(), logs:[], running:null, quests:{}, battles:[], toi:{} };
 }
@@ -408,6 +440,7 @@ function normalize(o){
   d.seen=Number.isInteger(o.seen)?o.seen:0;
   d.goal=Number.isFinite(o.goal)&&o.goal>=5&&o.goal<=MAX_MIN?Math.round(o.goal):d.goal;
   d.sound=o.sound!==false;
+  d.typesSeen=Array.isArray(o.typesSeen)?o.typesSeen.map(x=>str(x,20)).filter(Boolean).slice(0,60):[];
   d.weekly={};
   if(o.weekly&&typeof o.weekly==='object') for(const k in o.weekly){ const v=o.weekly[k]; if(okK(k)&&v&&typeof v==='object'){ d.weekly[k]={pick:str(v.pick,20), memo:str(v.memo,300)}; } }
   if(o.notify&&typeof o.notify==='object') d.notify={on:!!o.notify.on, time:/^\d{2}:\d{2}$/.test(o.notify.time)?o.notify.time:'21:00', last:str(o.notify.last,10)};
@@ -449,11 +482,15 @@ function totalXP(){
   return x + D.battles.length*CONFIG.xp.boss;
 }
 const stageOf = xp => STAGES.reduce((a,s,i)=>xp>=s.at?i:a,0);
+function idleDays(){ let d=addDays(new Date(),-1), n=0; while(n<30 && !anyOn(dk(d))){ n++; d=addDays(d,-1); } return n; }
 function mood(){
   if(D.running) return 'work';
   const k=todayK(), m=dayMin(k);
   if(m>=D.goal) return 'happy';
-  if(!m && !dayQuests(k) && !battlesOn(k)) return 'sleepy';
+  if(!m && !dayQuests(k) && !battlesOn(k) && !(D.toi[k]&&D.toi[k].text)){
+    // きのうも おととい も なにもない → ちょっと おこる（はじめての日は おこらない）
+    return (idleDays()>=1 && Object.keys(D.logs).length>0 && D.start!==k) ? 'grumpy' : 'sleepy';
+  }
   return 'normal';
 }
 const anyOn = k => dayMin(k)>0 || dayQuests(k)>0 || battlesOn(k)>0 || !!(D.toi[k]&&D.toi[k].text);
@@ -475,6 +512,84 @@ function questsFor(k){
   const rnd=seeded(h), out=[];
   while(out.length<Math.min(CONFIG.questsPerDay,pool.length)) out.push(pool.splice(Math.floor(rnd()*pool.length),1)[0]);
   return out;
+}
+
+// ---------- キャラのタイプ（向き合い方から決まる・名前と見た目は kotoba.js の types） ----------
+function features(){
+  const days=14, keys=[...Array(days)].map((_,i)=>dk(addDays(new Date(),-i)));
+  const logs=D.logs.filter(l=>keys.includes(dk(new Date(l.at))));
+  const activeDays=keys.filter(anyOn);
+  const mins=keys.map(dayMin);
+  const active=activeDays.length, total=mins.reduce((a,b)=>a+b,0);
+  const avgMin=active?total/active:0;
+  const goalHit=active?keys.filter(kk=>dayMin(kk)>=D.goal).length/active:0;
+  const byG={}; logs.forEach(l=>{ byG[l.g]=(byG[l.g]||0)+l.min; });
+  const gs=D.genres.filter(g=>g.items.length);
+  const shares=gs.map(g=>total?(byG[g.id]||0)/total:0);
+  const topI=shares.indexOf(Math.max(0,...shares));
+  const topShare=shares.length?Math.max(0,...shares):0, topName=gs[topI]?gs[topI].name:'';
+  const balance=shares.length>=3&&total?Math.min(...shares):0;
+  const memoRate=logs.length?logs.filter(l=>l.memo).length/logs.length:0;
+  const toiRate=active?keys.filter(kk=>D.toi[kk]&&D.toi[kk].text).length/active:0;
+  const marks=keys.filter(kk=>D.toi[kk]&&D.toi[kk].mark).length;
+  const boss=D.battles.filter(b=>keys.includes(dk(new Date(b.at)))).length;
+  const hrs=logs.map(l=>new Date(l.at).getHours());
+  const morning=logs.length?hrs.filter(h=>h<10).length/logs.length:0;
+  const night=logs.length?hrs.filter(h=>h>=21).length/logs.length:0;
+  const wk=logs.length?logs.filter(l=>[0,6].includes(new Date(l.at).getDay())).length/logs.length:0;
+  const sessionAvg=logs.length?total/logs.length:0;
+  const quests=active?keys.filter(kk=>dayQuests(kk)>0).length/active:0;
+  let streak=0,cur=0; keys.slice().reverse().forEach(kk=>{ cur=anyOn(kk)?cur+1:0; streak=Math.max(streak,cur); });
+  const mean=total/days, cv=mean?Math.sqrt(mins.reduce((a,v)=>a+(v-mean)**2,0)/days)/mean:0;
+  const weeklyPicks=Object.keys(D.weekly).filter(w=>D.weekly[w].pick).length;
+  const allActive=new Set([...D.logs.map(l=>dk(new Date(l.at))),...Object.keys(D.quests),...Object.keys(D.toi)]).size;
+  const sinceStart=Math.round((parseK(todayK())-parseK(D.start))/864e5);
+  const idle=idleDays();
+  const recent2=anyOn(todayK())||anyOn(dk(addDays(new Date(),-1)));
+  const gapBefore=(()=>{ let n=0; for(let i=2;i<14;i++){ if(anyOn(keys[i])) break; n++; } return n; })();
+  return {active,ratio:active/days,avgMin,goalHit,topShare,topName,balance,memoRate,toiRate,marks,boss,morning,night,wk,sessionAvg,quests,streak,cv,weeklyPicks,allActive,sinceStart,idle,recent2,gapBefore,logs:logs.length};
+}
+const TYPE_RULES = {
+  orusuban:  f=>f.idle>=3,
+  hajimemashite: f=>f.active<3 && f.allActive<5,
+  haru:      f=>f.sinceStart<7 && f.active>=3,
+  fukkatsu:  f=>f.recent2 && f.gapBefore>=3,
+  veteran:   f=>f.allActive>=60,
+  majime:    f=>f.ratio>=0.85 && f.goalHit>=0.6,
+  nagatsuzuki: f=>f.streak>=10,
+  yarikiri:  f=>f.goalHit>=0.9 && f.active>=5,
+  tankyu:    f=>f.toiRate>=0.8 && f.active>=5,
+  senshi:    f=>f.boss>=3,
+  dokidoki:  f=>f.marks>=3,
+  kakikaki:  f=>f.memoRate>=0.6 && f.logs>=5,
+  kanjiru:   f=>f.toiRate>=0.5 && f.memoRate<0.2 && f.active>=5,
+  selfhug:   f=>f.quests>=0.7 && f.active>=5,
+  mitsumeru: f=>f.boss>=1 && f.memoRate>=0.4,
+  keikaku:   f=>f.weeklyPicks>=2,
+  asa:       f=>f.morning>=0.6 && f.logs>=5,
+  yofukashi: f=>f.night>=0.6 && f.logs>=5,
+  shumatsu:  f=>f.wk>=0.6 && f.logs>=5,
+  heijitsu:  f=>f.wk<=0.1 && f.active>=6,
+  dokan:     f=>f.sessionAvg>=90,
+  chokotto:  f=>f.sessionAvg<15 && f.logs>=8,
+  kotsukotsu:f=>f.ratio>=0.7 && f.avgMin<45,
+  hitosuji:  f=>f.topShare>=0.75 && f.logs>=5,
+  balance:   f=>f.balance>=0.25,
+  merihari:  f=>f.active>=3 && f.active<=6 && f.avgMin>=60,
+  kimagure:  f=>f.cv>=1.0 && f.ratio>=0.3 && f.ratio<=0.7,
+  nonbiri:   f=>f.ratio>=0.3 && f.ratio<=0.6 && f.avgMin<30,
+  marathon:  f=>f.ratio>=0.7,
+  jibunrashisa: f=>true
+};
+let typeCache=null, typeCacheKey='';
+function currentType(){
+  const types=Array.isArray(W.types)?W.types:[]; if(!types.length) return null;
+  const key=todayK()+'|'+D.logs.length+'|'+Object.keys(D.toi).length+'|'+D.battles.length+'|'+Object.keys(D.quests).length;
+  if(typeCache && typeCacheKey===key) return typeCache;
+  const f=features();
+  let t=types.find(x=>TYPE_RULES[x.id] && TYPE_RULES[x.id](f)) || types[types.length-1];
+  t=Object.assign({}, t); t.desc=(t.desc||'').replace('{genre}', f.topName||'それ'); t.f=f;
+  typeCache=t; typeCacheKey=key; return t;
 }
 
 // ---------- 小物 ----------
@@ -554,10 +669,10 @@ function popXP(n){
 }
 
 // ---------- 画面：LCD ----------
-const LINES = Object.assign({egg:['…ことこと'],sleepy:['…むにゃ'],normal:['いいかんじ！'],happy:['もくひょう たっせい！'],work:['いっしょに そだってる…'],reward:['やったね！']}, W.lines||{});
+const LINES = Object.assign({egg:['…ことこと'],sleepy:['…むにゃ'],normal:['いいかんじ！'],happy:['もくひょう たっせい！'],work:['いっしょに そだってる…'],reward:['やったね！'],grumpy:['…ぷい'],grumpy2:['…もう しらない']}, W.lines||{});
 let lineIdx=0;
 function speak(force){
-  const si=stageOf(totalXP()), m=mood(), set=si===0&&m!=='work'?LINES.egg:LINES[m];
+  const si=stageOf(totalXP()), m=mood(), set=si===0&&m!=='work'?LINES.egg:(m==='grumpy'&&idleDays()>=3?LINES.grumpy2:LINES[m]);
   if(force) lineIdx++;
   $('#bubble').textContent=set[lineIdx%set.length];
 }
@@ -569,7 +684,8 @@ function renderLCD(){
   const pet=$('#pet');
   pet.innerHTML=petSVG(si,m==='work'?'happy':m);
   pet.setAttribute('aria-label',D.pet+'（'+st.name+'）');
-  pet.className='pet '+(m==='work'?'work':si===0?'wobble':m==='sleepy'?'sleep':'hop');
+  pet.className='pet '+(m==='work'?'work':si===0?'wobble':m==='sleepy'?'sleep':m==='grumpy'?'grump':'hop');
+  const tp=currentType(); $('#typeLabel').textContent=tp?tp.name:''; if(tp && !(D.typesSeen||[]).includes(tp.id)){ D.typesSeen=(D.typesSeen||[]).concat(tp.id); save(); }
   const area=$('#stageArea');
   area.querySelectorAll('.zzz,.spark').forEach(n=>n.remove());
   if(si>0 && m==='sleepy') area.append(el('div',{class:'zzz'},'z z'));
@@ -648,7 +764,7 @@ function renderToday(){
       el('div',{class:'toihead'},el('span',null,isToday?'きょうの問い':'この日の問い'),el('span',{class:'toinum'},'No.'+(toi.i+1)+(toi.deep?'　🕯️':''))),
       el('p',{class:'toiq'},toi.q),
       toi.h?el('p',{class:'toih'},toi.h):null,
-      toi.deep?el('p',{class:'hint'},'🕯️ すこし深い問い。つらければ とばしてOK。深い傷は 専門家と いっしょに。'):null);
+      null);
     const ta=el('textarea',{class:'in',maxlength:'400',placeholder:'きづいたことを ひとこと（なくてもOK）','aria-label':'気づきメモ'},saved&&saved.text||'');
     const mark=el('button',{class:'btn sm toimark','aria-pressed':String(!!(saved&&saved.mark))},(saved&&saved.mark)?'★ ドキッとした':'☆ ドキッとした');
     mark.onclick=()=>{ const cur=D.toi[viewDay]||{i:toi.i,q:toi.q,text:'',mark:false}; cur.mark=!cur.mark; D.toi[viewDay]=cur; if(!cur.text&&!cur.mark) delete D.toi[viewDay]; save(); renderToday(); };
@@ -662,11 +778,11 @@ function renderToday(){
     s.append(c);
   }
 
-  // きょうの ちいさなこと（クエスト）
+  // 今日のセルフハグ（クエスト）
   if(isToday){
     const qs=questsFor(viewDay), done=D.quests[viewDay]||[];
     if(qs.length){
-      const qc=el('div',{class:'card'},el('h3',null,'きょうの ちいさなこと'),el('p',{class:'hint'},'1つ できたら '+CONFIG.xp.quest+'EXP。やらなくても だいじょうぶ。'));
+      const qc=el('div',{class:'card'},el('h3',null,'今日のセルフハグ'),el('p',{class:'hint'},'じぶんを だきしめる ちいさなこと。1つ できたら '+CONFIG.xp.quest+'EXP。やらなくても だいじょうぶ。'));
       const box=el('div',{class:'items',style:'grid-template-columns:1fr'});
       qs.forEach(q=>{
         const on=done.includes(q);
@@ -897,6 +1013,18 @@ function renderReview(){
     : 'いちばん そだててるのは '+WJ[best]+'曜日。'+(best!==worst?WJ[worst]+'曜日は ちいさめでOK、の日かも。':'')));
   s.append(c2);
 
+  // いまのタイプ
+  const tp=currentType();
+  if(tp){
+    const pic=el('div',{class:'evo',style:'margin-bottom:4px'}); pic.innerHTML=petSVG(stageOf(totalXP()),'normal',tp);
+    const seen=(D.typesSeen||[]).length, totalTypes=(W.types||[]).length;
+    const ct=el('div',{class:'card',style:'text-align:center'},pic,
+      el('p',{style:'margin:0;font-weight:700;font-size:1.05rem'},tp.name),
+      el('p',{class:'hint',style:'margin:4px 0 8px'},tp.desc),
+      el('p',{class:'hint',style:'margin:0;font-family:var(--pixel)'},'タイプずかん '+seen+' / '+totalTypes),
+      el('p',{class:'hint',style:'margin:6px 0 0'},'この2週間の 向き合い方で 決まります。変わっていくのも 楽しみのひとつ。'));
+    s.append(ct);
+  }
   // きろく
   s.append(el('div',{class:'card'},el('h3',null,'きろく'),el('div',{class:'stats'},
     el('div',{class:'stat'},el('b',null,streak()+'日'),el('small',null,'れんぞく')),
@@ -1120,7 +1248,7 @@ function renderSettings(){
   s.append(c1);
 
   // クエスト
-  const c3=el('div',{class:'card'},el('h3',null,'きょうの ちいさなこと（クエスト）'),el('p',{class:'hint'},'この中から 毎日'+CONFIG.questsPerDay+'つ、そだてる画面に 出ます。'));
+  const c3=el('div',{class:'card'},el('h3',null,'今日のセルフハグ（リスト）'),el('p',{class:'hint'},'この中から 毎日'+CONFIG.questsPerDay+'つ、そだてる画面に 出ます。'));
   D.questPool.forEach((q,qi)=>{
     const inp=el('input',{class:'in',maxlength:'30',value:q,'aria-label':'クエスト'});
     inp.onchange=()=>{ const v=inp.value.trim(); if(v){ D.questPool[qi]=v; save(); } };

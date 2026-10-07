@@ -60,9 +60,48 @@ lines: {
   normal:['いいかんじ！','そのちょうし〜','ふふ、そだってる きがする','きょうも きてくれた'],
   happy:['もくひょう たっせい！','きょうの わたし、まるっと えらい','ぴかぴか きぶん！'],
   work:['いっしょに そだってる…','がんばってる〜','いい じかん だね'],
+  // さぼった翌日（ちょっと おこってる）／3日以上あいたとき
+  grumpy:['…ぷい','きのう、こなかった','まってたのに','…べつに いいけど'],
+  grumpy2:['…もう しらない','さみしかったんだからね','かえってきて くれる？'],
   // 記録した瞬間のごほうびセリフ
   reward:['やったー！','そだった きがする！','いまの じかん、だいじに しまったよ','えらい えらい','ふふ、うれしい']
 },
+
+// キャラのタイプ（30種）。上から順に当てはまるものが選ばれる。name と desc は自由に直してOK
+// body＝体の色（空なら成長段階の色）／acc＝かざり（ribbon glasses hat flower star scarf leaf crown headphones bandana sprout bell moon sun heart pen book shield cloud cup）
+// desc の {genre} には いちばん育てているジャンル名が入る
+types: [
+  { id:'orusuban',     name:'おるすばんちゃん',   body:'#E6E0EC', acc:'cloud',      desc:'3日以上 あいてる。おこってない、ちょっと さみしいだけ。' },
+  { id:'hajimemashite',name:'はじめましてちゃん', body:'',        acc:'sprout',     desc:'まだ はじまったばかり。どんな子になるかは これから。' },
+  { id:'haru',         name:'はるちゃん',         body:'#E4F3DF', acc:'leaf',       desc:'芽が出たばかり。はじめの1週間、ちゃんと来てる。' },
+  { id:'fukkatsu',     name:'ふっかつちゃん',     body:'#FFE9C9', acc:'sun',        desc:'しばらく おやすみして、また もどってきた。それが いちばん えらい。' },
+  { id:'veteran',      name:'ベテランちゃん',     body:'#F3E6C8', acc:'crown',      desc:'そだてた日が 60日をこえた。もう 生活の一部。' },
+  { id:'majime',       name:'まじめちゃん',       body:'#DDE8F7', acc:'glasses',    desc:'ほぼ毎日 来て、目標も こえてる。すこし 力を抜く日が あってもいい。' },
+  { id:'nagatsuzuki',  name:'ながつづきちゃん',   body:'#E2F0E6', acc:'bandana',    desc:'10日以上 れんぞく。つづける力が 育ってる。' },
+  { id:'yarikiri',     name:'やりきりちゃん',     body:'#FFE3B3', acc:'star',       desc:'やる日は 目標まで やりきる。' },
+  { id:'tankyu',       name:'たんきゅうちゃん',   body:'#E9E1F7', acc:'book',       desc:'ほぼ毎日、問いに こたえてる。じぶんを 知るのが すき。' },
+  { id:'senshi',       name:'せんしちゃん',       body:'#E3DCEF', acc:'shield',     desc:'イヤな日に ちゃんと 向き合ってる。にげずに、にげ方も知ってる。' },
+  { id:'dokidoki',     name:'ドキドキちゃん',     body:'#FFE1EA', acc:'heart',      desc:'ドキッとした問いが 多い。いま、なにかが 動いてる。' },
+  { id:'kakikaki',     name:'かきかきちゃん',     body:'#DFF0F7', acc:'pen',        desc:'メモを よく書く。言葉にすると 見えてくる派。' },
+  { id:'kanjiru',      name:'かんじるちゃん',     body:'#FFF0D6', acc:'flower',     desc:'書くより 感じる派。問いは 読んで、心の中で こたえてる。' },
+  { id:'selfhug',      name:'セルフハグちゃん',   body:'#FFE4EC', acc:'ribbon',     desc:'ちいさな セルフハグを 毎日 つみかさねてる。' },
+  { id:'mitsumeru',    name:'みつめるちゃん',     body:'#E6E4F5', acc:'moon',       desc:'イヤな気持ちも メモも、ちゃんと 見つめてる。' },
+  { id:'keikaku',      name:'けいかくちゃん',     body:'#E3F1EA', acc:'bell',       desc:'週のふりかえりで「来週は これ」と 決めてる。' },
+  { id:'asa',          name:'あさ型ちゃん',       body:'#FFF4D1', acc:'sun',        desc:'朝のうちに そだてる。一日の はじまりに 自分の時間。' },
+  { id:'yofukashi',    name:'よふかしちゃん',     body:'#DCDCF3', acc:'moon',       desc:'夜に そだてる。一日の おわりに 自分に もどる時間。' },
+  { id:'shumatsu',     name:'しゅうまつちゃん',   body:'#E8F2DF', acc:'hat',        desc:'週末に まとめて そだてる。平日は 休んでいい。' },
+  { id:'heijitsu',     name:'へいじつちゃん',     body:'#E4ECF7', acc:'cup',        desc:'平日こつこつ、週末は おやすみ。いい リズム。' },
+  { id:'dokan',        name:'どかんちゃん',       body:'#FFE0D0', acc:'headphones', desc:'一回が 長い。集中したら 止まらない タイプ。' },
+  { id:'chokotto',     name:'ちょこっとちゃん',   body:'#FFF1E0', acc:'sprout',     desc:'短い時間を 何回も。すきまを 見つけるのが 上手。' },
+  { id:'kotsukotsu',   name:'こつこつちゃん',     body:'#EAF2E2', acc:'leaf',       desc:'毎日すこしずつ。量より つづけること。' },
+  { id:'hitosuji',     name:'ひとすじちゃん',     body:'#F7E6E6', acc:'scarf',      desc:'いまは「{genre}」ひとすじ。ひとつを 深める時期。' },
+  { id:'balance',      name:'バランスちゃん',     body:'#EEF2E6', acc:'flower',     desc:'体も 心も 空間も、まんべんなく。' },
+  { id:'merihari',     name:'メリハリちゃん',     body:'#FDE8D6', acc:'bandana',    desc:'やる日は しっかり、休む日は しっかり。' },
+  { id:'kimagure',     name:'きまぐれちゃん',     body:'#F3E6F7', acc:'star',       desc:'日によって ぜんぜん ちがう。それが 自然体。' },
+  { id:'nonbiri',      name:'のんびりちゃん',     body:'#FFF6E0', acc:'cloud',      desc:'マイペースに ゆっくり。急がなくて いい。' },
+  { id:'marathon',     name:'マラソンちゃん',     body:'#E6F0F7', acc:'bandana',    desc:'ほぼ毎日 来てる。長く つづく走り方。' },
+  { id:'jibunrashisa', name:'じぶんらしさちゃん', body:'',        acc:'ribbon',     desc:'どの型にも はまらない。それが この子の らしさ。' }
+],
 
 room: {
   title: 'イヤなことが あった日に 開く部屋',
