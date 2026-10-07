@@ -1,0 +1,15 @@
+{
+  "name": "エゴ育成ゲーム",
+  "short_name": "エゴ育成",
+  "description": "じぶんを育てる時間を記録する、たまごっち風の自分磨きゲーム",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#FFF6F1",
+  "theme_color": "#FFC4D6",
+  "lang": "ja",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

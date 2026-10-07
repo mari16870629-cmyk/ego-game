@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>エゴ育成ゲーム</title>
+<meta name="description" content="じぶんを育てる時間を、タイマーと記録で見える化。かけた時間でキャラが育つ、たまごっち風の自分磨きゲーム。">
+<meta name="theme-color" content="#FFC4D6">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FFF6F1; --card:#FFFFFF; --ink:#4A3F55; --sub:#8C7F96; --line:#F2E2E8;
+  --shell1:#FFD6E2; --shell2:#FFB3C8; --lcd:#E6F0D6; --lcd-ink:#3F4A3A;
+  --gold:#E8B84A; --dq:#101018;
+  --pixel:"DotGothic16","Zen Maru Gothic",monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --bg:#2A2433; --card:#372F42; --ink:#F4EAF2; --sub:#BCAFC6; --line:#4A4057; }
+}
+:root[data-theme="dark"]{ --bg:#2A2433; --card:#372F42; --ink:#F4EAF2; --sub:#BCAFC6; --line:#4A4057; }
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) .card.toi{background:#443A2E;border-color:#8A7140} }
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Noto Sans JP",system-ui,sans-serif;
+  line-height:1.6;-webkit-font-smoothing:antialiased;
+  padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+main{max-width:470px;margin:0 auto;padding:16px 16px 40px}
+button,select{font-family:inherit;color:inherit}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+[hidden]{display:none!important}
+
+/* ===== たまごっち本体 ===== */
+.device{position:relative;width:min(100%,360px);margin:6px auto 4px;padding:17% 15% 7%;
+  border-radius:50% 50% 50% 50% / 58% 58% 42% 42%;
+  background:radial-gradient(rgba(255,255,255,.55) 2px,transparent 2.6px) 0 0/16px 16px,linear-gradient(165deg,var(--shell1),var(--shell2));
+  box-shadow:inset -8px -12px 0 rgba(150,60,100,.10),inset 8px 10px 0 rgba(255,255,255,.55),0 12px 26px rgba(190,100,140,.28)}
+.device::before{content:"";position:absolute;left:22%;top:7%;width:18%;height:6%;border-radius:50%;background:rgba(255,255,255,.6);transform:rotate(-18deg)}
+.dev-title{position:absolute;left:0;right:0;top:9.5%;text-align:center;font-family:var(--pixel);font-size:.8rem;letter-spacing:.12em;color:#9C4D6E}
+.lcd-frame{background:#fff;border-radius:22px;padding:7px;box-shadow:inset 0 2px 0 rgba(0,0,0,.06)}
+.lcd{position:relative;background:var(--lcd);color:var(--lcd-ink);border-radius:16px;padding:8px 9px 9px;font-family:var(--pixel);overflow:hidden;
+  background-image:linear-gradient(rgba(0,0,0,.035) 1px,transparent 1px);background-size:100% 3px}
+.lcd-top{display:flex;justify-content:space-between;font-size:.72rem;line-height:1.3}
+.stage-area{position:relative;height:124px;display:flex;align-items:flex-end;justify-content:center}
+.pet{width:92px;height:92px;cursor:pointer;margin-bottom:4px}
+.pet svg{width:100%;height:100%;display:block}
+.pet.hop{animation:hop 1s steps(2) infinite}
+.pet.work{animation:hop .5s steps(2) infinite}
+.pet.wobble{animation:wobble 1.4s steps(4) infinite}
+.pet.sleep{animation:breathe 2.4s steps(2) infinite}
+.pet.jump{animation:jump .5s steps(3) 2}
+@keyframes hop{50%{transform:translateY(-6px)}}
+@keyframes wobble{25%{transform:rotate(-8deg)}75%{transform:rotate(8deg)}}
+@keyframes breathe{50%{transform:scaleY(.95) translateY(2px)}}
+@keyframes jump{50%{transform:translateY(-16px)}}
+.bubble{position:absolute;top:4px;left:50%;transform:translateX(-50%);max-width:94%;background:#fff;border:2px solid var(--lcd-ink);border-radius:8px;
+  padding:1px 8px;font-size:.7rem;line-height:1.45;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.zzz{position:absolute;right:22%;top:38px;font-size:.8rem;animation:zz 2s steps(3) infinite}
+@keyframes zz{0%{opacity:0;transform:translateY(6px)}50%{opacity:1}100%{opacity:0;transform:translateY(-8px)}}
+.spark{position:absolute;width:10px;height:10px;animation:tw 1.2s steps(2) infinite}
+@keyframes tw{50%{opacity:.15}}
+.confetti{position:absolute;width:7px;height:7px;border-radius:2px;pointer-events:none;animation:conf 1.2s ease-out forwards}
+@keyframes conf{0%{opacity:0;transform:translateY(10px) rotate(0)}20%{opacity:1}100%{opacity:0;transform:translateY(-40px) rotate(200deg)}}
+.pop{position:absolute;bottom:70px;left:50%;width:16px;height:14px;pointer-events:none;animation:pop .9s ease-out forwards}
+.pop.xp{width:auto;height:auto;font-size:.72rem;white-space:nowrap}
+@keyframes pop{0%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,-48px)}}
+.meters{display:grid;grid-template-columns:1fr 1fr;gap:0 10px;margin-top:4px;font-size:.66rem;line-height:1.55}
+.meter{display:flex;justify-content:space-between;gap:4px;min-width:0}
+.meter span:first-child{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.meter span:last-child{flex:none}
+.xp{display:flex;align-items:center;gap:6px;margin-top:5px;font-size:.66rem}
+.xpbar{flex:1;height:8px;border:2px solid var(--lcd-ink);border-radius:2px;padding:1px}
+.xpbar i{display:block;height:100%;background:var(--lcd-ink);width:0;transition:width .4s steps(6)}
+.dev-btns{display:flex;justify-content:center;gap:18px;margin-top:12px}
+.dev-btns button{border:none;background:none;padding:0;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;font-size:.68rem;color:#8E4565;font-weight:700}
+.dev-btns .knob{width:38px;height:38px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#FFF6D8,#F3C55A 70%);box-shadow:0 4px 0 #C99A33,inset 0 -2px 0 rgba(0,0,0,.08)}
+.dev-btns button[aria-pressed="true"] .knob{transform:translateY(3px);box-shadow:0 1px 0 #C99A33}
+.gear{display:block;margin:10px auto 16px;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 16px;font-size:.8rem;color:var(--sub);cursor:pointer}
+
+/* ===== カード共通 ===== */
+.card{background:var(--card);border-radius:18px;padding:14px;margin-bottom:12px;box-shadow:0 2px 0 var(--line)}
+.card h3{margin:0 0 8px;font-size:.95rem}
+.hint{font-size:.78rem;color:var(--sub);margin:0 0 10px}
+.datenav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.datenav div{text-align:center;line-height:1.25}
+.datenav b{font-size:1rem}.datenav small{display:block;color:var(--sub);font-size:.72rem}
+.navbtn{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--card);font-size:1.1rem;cursor:pointer}
+.navbtn:disabled{opacity:.3;cursor:default}
+
+/* きょうの合計 */
+.total{text-align:center}
+.total .big{font-family:var(--pixel);font-size:2.3rem;line-height:1.1}
+.total .goal{font-size:.82rem;color:var(--sub)}
+.goalbar{height:14px;border-radius:999px;background:var(--line);overflow:hidden;margin:10px 0 6px}
+.goalbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#F7C960,#F59BB0);border-radius:999px;transition:width .5s}
+.gsum{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 12px;font-size:.78rem;color:var(--sub)}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px;vertical-align:0}
+
+/* タイマー */
+.items{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.item{display:flex;align-items:center;gap:8px;text-align:left;border:2px solid transparent;background:var(--bg);border-radius:12px;padding:9px 10px;font-size:.88rem;cursor:pointer;min-height:44px;line-height:1.3}
+.item .box{flex:none;width:18px;height:18px;border:2px solid var(--g);border-radius:4px;display:grid;place-items:center}
+.item.on{border-color:var(--g)}
+.item.on .box{background:var(--g)}
+.item.on .box::after{content:"";width:5px;height:9px;border:solid #fff;border-width:0 2.5px 2.5px 0;transform:rotate(45deg) translate(-1px,-1px)}
+.chips-g{margin-bottom:8px}
+.chips-g small{display:block;font-size:.74rem;color:var(--sub);margin-bottom:3px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:2px solid color-mix(in srgb,var(--g) 55%,transparent);background:color-mix(in srgb,var(--g) 12%,var(--card));border-radius:999px;padding:7px 13px;font-size:.88rem;cursor:pointer;min-height:40px}
+.chip[aria-pressed="true"]{background:var(--g);border-color:var(--g);color:#fff;font-weight:700}
+.clock{font-family:var(--pixel);font-size:2.6rem;text-align:center;line-height:1.1;margin:6px 0 2px;font-variant-numeric:tabular-nums}
+.running-name{text-align:center;font-weight:700}
+.bigbtn{display:block;width:100%;border:none;border-radius:999px;padding:14px;font-size:1.05rem;font-weight:900;cursor:pointer;margin-top:10px;
+  background:linear-gradient(135deg,#F7C960,#E8A93C);color:#4A3214;box-shadow:0 4px 0 #C98F2C}
+.bigbtn.stop{background:linear-gradient(135deg,#F7A8BC,#E8829E);color:#fff;box-shadow:0 4px 0 #C4627E}
+.bigbtn:disabled{opacity:.45;cursor:default}
+.quick{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 0}
+.quick button{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:9px 0;font-size:.88rem;cursor:pointer}
+
+/* 記録リスト */
+.loglist{list-style:none;margin:0;padding:0}
+.loglist li{border-top:1px solid var(--line);padding:9px 0;font-size:.88rem}
+.loglist li:first-child{border-top:none}
+.loglist .top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.loglist .meta{color:var(--sub);font-size:.74rem}
+.loglist .memo{margin-top:3px;white-space:pre-wrap;word-break:break-word;font-size:.84rem;background:var(--bg);border-radius:8px;padding:5px 8px}
+
+/* ===== ドラクエ窓 ===== */
+.dq{background:var(--dq);color:#fff;border:3px solid #fff;border-radius:8px;box-shadow:0 0 0 3px var(--dq);font-family:var(--pixel);padding:12px 14px;margin:3px 3px 14px;line-height:1.7}
+.dq h3{margin:0 0 6px;font-size:.95rem;font-weight:400;color:#FFE08A}
+.dq p{margin:0 0 8px;font-size:.9rem}
+.dq .small{font-size:.74rem;color:#CFC8DA}
+.cmd{display:block;width:100%;text-align:left;background:none;border:none;color:#fff;font-family:var(--pixel);font-size:.95rem;padding:8px 6px 8px 26px;cursor:pointer;position:relative;border-radius:4px;line-height:1.45}
+.cmd::before{content:"";position:absolute;left:8px;top:50%;margin-top:-6px;border:6px solid transparent;border-left:9px solid #fff;opacity:0}
+.cmd:hover::before,.cmd:focus-visible::before{opacity:1}
+.cmd:focus-visible{outline:none;background:rgba(255,255,255,.08)}
+.cmd.done{color:#8E879A;text-decoration:line-through}
+.cmd.done::after{content:"CLEAR";position:absolute;right:6px;top:9px;font-size:.66rem;color:#FFE08A;text-decoration:none}
+.bossbtn{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:none;cursor:pointer;background:linear-gradient(135deg,#3B2A55,#6B4B8F);color:#fff;border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:0 4px 0 #2B1E40}
+.bossbtn svg{width:56px;height:56px;flex:none}
+.bossbtn b{display:block;font-size:1rem}.bossbtn small{font-size:.76rem;opacity:.85}
+
+/* ===== ふりかえり ===== */
+.bars{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;align-items:end;height:140px;margin:6px 0 4px}
+.bar{display:flex;flex-direction:column-reverse;align-items:stretch;height:100%;justify-content:flex-start}
+.bar .stack{display:flex;flex-direction:column-reverse;border-radius:6px 6px 2px 2px;overflow:hidden;background:var(--line);min-height:3px}
+.bar .stack i{display:block}
+.bar .v{text-align:center;font-family:var(--pixel);font-size:.62rem;color:var(--sub);margin-bottom:2px;white-space:nowrap}
+.barlbl{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;text-align:center;font-size:.72rem;color:var(--sub)}
+.barlbl .today{color:var(--ink);font-weight:900}
+.legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:.74rem;color:var(--sub);margin-top:8px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:var(--bg);border-radius:12px;padding:8px;text-align:center}
+.stat b{display:block;font-size:1.05rem;font-family:var(--pixel);font-weight:400}
+.stat small{font-size:.7rem;color:var(--sub)}
+
+/* ===== 設定 ===== */
+label.f{display:block;font-size:.8rem;color:var(--sub);margin:0 0 4px}
+.in{width:100%;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:10px;padding:9px 10px;font-family:inherit;font-size:1rem}
+textarea.in{min-height:70px;font-size:.9rem;resize:vertical}
+.row{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+.row .in{flex:1;min-width:0}
+.btn{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:9px 16px;font-size:.88rem;cursor:pointer;font-weight:700}
+.btn.primary{border:none;background:linear-gradient(135deg,#F7C960,#E8A93C);color:#4A3214;box-shadow:0 3px 0 #C98F2C}
+.btn.sm{padding:6px 12px;font-size:.78rem}
+.btn.del{color:var(--sub);font-weight:500}
+.btn.armed{background:#E4877F;color:#fff;border-color:#E4877F}
+.swatches{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 8px}
+.sw{width:28px;height:28px;border-radius:50%;border:3px solid transparent;cursor:pointer;padding:0}
+.sw[aria-pressed="true"]{border-color:var(--ink)}
+.gedit{border:2px solid color-mix(in srgb,var(--g) 50%,transparent);border-radius:14px;padding:10px;margin-bottom:10px}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.banner{background:linear-gradient(135deg,#FFF0C9,#FFE0EA);border-radius:18px;padding:14px;margin-bottom:12px}
+.banner b{display:block;margin-bottom:4px}
+.card.toi{background:linear-gradient(135deg,#FFF7E0,#FFF0F4);border:2px solid #F3DCA0}
+.toihead{display:flex;justify-content:space-between;font-size:.78rem;color:var(--sub);margin-bottom:4px}
+.toinum{font-family:var(--pixel)}
+.toiq{margin:0 0 6px;font-size:1.05rem;font-weight:700;line-height:1.6}
+.toih{margin:0 0 10px;font-size:.82rem;color:var(--sub);background:rgba(255,255,255,.55);border-radius:8px;padding:5px 9px}
+.toimark[aria-pressed="true"]{background:var(--gold);border-color:var(--gold);color:#4A3214}
+.note{font-size:.74rem;color:var(--sub);text-align:center;margin:18px 4px 0;line-height:1.7}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--dq);color:#fff;font-family:var(--pixel);font-size:.85rem;padding:8px 16px;border:2px solid #fff;border-radius:8px;z-index:60;max-width:90vw;text-align:center}
+
+/* ===== モーダル ===== */
+.modal{position:fixed;inset:0;background:rgba(40,30,50,.55);display:flex;align-items:center;justify-content:center;padding:16px;z-index:50}
+.modal .box{background:var(--card);border-radius:20px;padding:18px;width:min(100%,420px);max-height:88vh;overflow:auto}
+.modal h2{margin:0 0 8px;font-size:1.05rem}
+.modal .acts{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;margin-top:14px}
+.evo svg{width:120px;height:120px;display:block;margin:0 auto 6px}
+
+/* ===== ボス戦 ===== */
+.battle{position:fixed;inset:0;background:#000;color:#fff;z-index:40;display:flex;flex-direction:column;font-family:var(--pixel);
+  padding:calc(12px + env(safe-area-inset-top,0px)) 12px calc(12px + env(safe-area-inset-bottom,0px))}
+.battle .inner{max-width:470px;width:100%;margin:0 auto;display:flex;flex-direction:column;height:100%}
+.bstatus{display:flex;justify-content:space-between;gap:10px}
+.bstatus .dq{flex:1;margin:3px;padding:6px 10px;font-size:.82rem;line-height:1.5}
+.field{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:150px;position:relative}
+.monster{width:150px;height:150px;transition:transform .3s,opacity .6s,filter .3s}
+.monster svg{width:100%;height:100%}
+.monster.shake{animation:shake .35s steps(4)}
+.monster.flash{filter:brightness(3)}
+.monster.gone{opacity:0;transform:scale(.2) translateY(-30px)}
+@keyframes shake{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.mname{margin-top:8px;font-size:.9rem}
+.hpbar{width:150px;height:8px;border:2px solid #fff;border-radius:2px;padding:1px;margin-top:4px}
+.hpbar i{display:block;height:100%;background:#7FE08A;transition:width .5s steps(8)}
+.dmg{position:absolute;top:30%;font-size:1.4rem;color:#FFE08A;animation:pop .9s ease-out forwards;left:50%}
+.lightball{position:absolute;width:14px;height:14px;background:#FFE08A;border-radius:50%;box-shadow:0 0 18px 8px rgba(255,224,138,.6);animation:rise 1.6s ease-out forwards}
+@keyframes rise{0%{opacity:0;transform:translateY(20px)}30%{opacity:1}100%{opacity:0;transform:translateY(-90px)}}
+.msg{min-height:84px;font-size:.95rem;white-space:pre-wrap}
+.cmds.grid{display:grid;grid-template-columns:1fr 1fr}
+.breath{width:70px;height:70px;border-radius:50%;border:3px solid #FFE08A;margin:4px auto 8px;animation:breath 8s ease-in-out infinite}
+@keyframes breath{0%,100%{transform:scale(.6)}50%{transform:scale(1)}}
+.bin{width:100%;background:#000;color:#fff;border:2px solid #fff;border-radius:6px;padding:8px;font-family:var(--pixel);font-size:.95rem;min-height:70px;resize:vertical}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+<main>
+  <div class="device">
+    <div class="dev-title" id="devTitle">エゴ育成ゲーム</div>
+    <div class="lcd-frame">
+      <div class="lcd" id="lcd">
+        <div class="lcd-top"><span id="lvl"></span><span id="lcdToday"></span></div>
+        <div class="stage-area" id="stageArea">
+          <div class="bubble" id="bubble"></div>
+          <div class="pet" id="pet" role="img"></div>
+        </div>
+        <div class="meters" id="meters"></div>
+        <div class="xp"><div class="xpbar"><i id="xpfill"></i></div><span id="xptext"></span></div>
+      </div>
+    </div>
+    <div class="dev-btns">
+      <button data-tab="today" aria-pressed="true"><span class="knob"></span>そだてる</button>
+      <button data-tab="review" aria-pressed="false"><span class="knob"></span>ふりかえり</button>
+      <button data-tab="quest" aria-pressed="false"><span class="knob"></span>イヤな日</button>
+    </div>
+  </div>
+  <button class="gear" data-tab="settings">せってい（育成メニュー・目標・引っ越し）</button>
+
+  <section id="tab-today"></section>
+  <section id="tab-review" hidden></section>
+  <section id="tab-quest" hidden></section>
+  <section id="tab-settings" hidden></section>
+
+  <p class="note">記録はこの端末（ブラウザ）の中だけに保存されます。<br>医療・カウンセリングの代わりではなく、自分磨きを楽しく続けるための記録ゲームです。</p>
+</main>
+
+<div class="modal" id="modal" hidden role="dialog" aria-modal="true" aria-labelledby="mTitle">
+  <div class="box"><h2 id="mTitle"></h2><div id="mBody"></div><div class="acts" id="mActs"></div></div>
+</div>
+
+<div class="battle" id="battle" hidden>
+  <div class="inner">
+    <div class="bstatus">
+      <div class="dq" id="bMe"></div>
+      <div class="dq" style="flex:none"><button class="cmd" id="bRun" style="padding:2px 6px 2px 22px;font-size:.82rem">にげる</button></div>
+    </div>
+    <div class="field" id="field">
+      <div class="monster" id="monster"></div>
+      <div class="mname" id="mname"></div>
+      <div class="hpbar" id="mhp"><i></i></div>
+    </div>
+    <div class="dq" style="margin-bottom:3px">
+      <div class="msg" id="msg" aria-live="polite"></div>
+      <div class="cmds" id="cmds"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script src="kotoba.js"></script>
+<script>
+(function(){
+'use strict';
+// 言葉（育成メニューの初期値・クエスト・セリフ・ボス戦・問い365）は kotoba.js にあります
+const W = window.EGO_KOTOBA || {};
+const CONFIG = Object.assign({ genres:[], goal:60, xp:{quest:15,boss:50,toi:5}, quests:[], questsPerDay:3, feelings:[], bossSteps:[], bossReplies:{} }, W.config||{});
+
+const $ = s => document.querySelector(s);
+const KEY = 'egoGame.v1';
+const PALETTE = [
+  {id:'rose',hex:'#F59BB0'},{id:'peach',hex:'#F6B07C'},{id:'honey',hex:'#E8C25A'},
+  {id:'mint',hex:'#7CCAA2'},{id:'sky',hex:'#86B7E6'},{id:'lilac',hex:'#B59AE6'}];
+const hexOf = id => (PALETTE.find(p=>p.id===id)||PALETTE[0]).hex;
+const MAX_GENRES = 6, MAX_ITEMS = 12, MAX_QUESTS = 40, MAX_MIN = 720;
+
+// ---------- 成長段階（育成時間＝経験値で進化） ----------
+const STAGES = [
+  {at:0,    name:'たまご',   sprite:'egg',   body:'#FFF6E6', acc:'#F7B9C4'},
+  {at:30,   name:'ひよっこ', sprite:'baby',  body:'#FFE4EC', acc:'#F7B9C4'},
+  {at:300,  name:'こども',   sprite:'child', body:'#FFEBCB', acc:'#8FD3A0'},
+  {at:1200, name:'わかば',   sprite:'teen',  body:'#FFDCE7', acc:'#8FD3A0'},
+  {at:3000, name:'おとな',   sprite:'adult', body:'#ECE2FC', acc:'#F59BB0'},
+  {at:6000, name:'ともしび', sprite:'light', body:'#FFF2CC', acc:'#F59BB0'}];
+const levelOf = xp => Math.floor(Math.sqrt(xp/12)) + 1;
+
+const ADULT_BODY = [
+  "....oooooooo....","...obbbbbbbbo...","..obwbbbbbbbbo..",".obbbbbbbbbbbbo.",".obbbbbbbbbbbbo.",
+  "obbbbbbbbbbbbbbo","obbbbbbbbbbbbbbo",".obbbbbbbbbbbbo.",".obbbbbbbbbbbbo.","..obbbbbbbbbbo..",
+  "...oooooooooo...","....oo....oo...."];
+const SPRITES = {
+  egg:{grid:["................","................","......oooo......",".....obbbbo.....","....owbaabbo....","...obbbaabbbo...",
+    "...obbbbbbbbo...","..obaabbbbbbbo..","..obaabbbbaabo..","..obbbbbbbaabo..","..obbbbbbbbbbo..",
+    "..obbbaabbbbbo..","...obbaabbbbo...","....obbbbbbo....",".....oooooo.....","................"]},
+  baby:{grid:["................","................","................","................","................","................",
+    "................",".....oooooo.....","....obwbbbbo....","...obbbbbbbbo...","..obbbbbbbbbbo..",
+    "..obbbbbbbbbbo..","..obbbbbbbbbbo..","...obbbbbbbbo...","....oooooooo....","................"],
+    face:{eyes:[[10,5],[10,10]],cheeks:[[11,4],[11,11]],mouth:[12,7]}},
+  child:{grid:["................","................","....aaa..aaa....",".....aaaaaa.....",".......aa.......",".....oooooo.....",
+    "...oobbbbbboo...","..obwbbbbbbbbo..",".obbbbbbbbbbbbo.",".obbbbbbbbbbbbo.",".obbbbbbbbbbbbo.",
+    ".obbbbbbbbbbbbo.","..obbbbbbbbbbo..","...oobbbbbboo...",".....oooooo.....","................"],
+    face:{eyes:[[9,5],[9,10]],cheeks:[[10,3],[10,12]],mouth:[11,7]}},
+  teen:{grid:["................","...aaa....aaa...","..aaaaa..aaaaa..","....aaaaaaaa....",".......aa.......",".....oooooo.....",
+    "...oobbbbbboo...","..obwbbbbbbbbo..",".obbbbbbbbbbbbo.","obbbbbbbbbbbbbbo","obbbbbbbbbbbbbbo",
+    ".obbbbbbbbbbbbo.","..obbbbbbbbbbo..","...oobbbbbboo...","....oooooooo....","....oo....oo...."],
+    face:{eyes:[[9,5],[9,10]],cheeks:[[10,3],[10,12]],mouth:[11,7]}},
+  adult:{grid:["......a.a.......",".....aayaa......","......a.a.......",".......g........"].concat(ADULT_BODY),
+    face:{eyes:[[8,5],[8,10]],cheeks:[[9,3],[9,12]],mouth:[10,7]}},
+  light:{grid:[".......y........","......yry.......","......yrry......",".......yy......."].concat(ADULT_BODY),
+    face:{eyes:[[8,5],[8,10]],cheeks:[[9,3],[9,12]],mouth:[10,7]}}
+};
+const MON_GRID = ["................","................","................",".......oo.......","......obbo......",".....obbbbo.....",
+  "....obbbbbbo....","...obbbbbbbbo...","..obbbbbbbbbbo..",".obbbbbbbbbbbbo.",".obbbbbbbbbbbbo.",
+  "obbbbbbbbbbbbbbo","obbbbbbbbbbbbbbo","obbbbbbbbbbbbbbo",".oooooooooooooo.","................"];
+
+function pixSVG(grid, col, extra){
+  const px = {};
+  grid.forEach((row,r)=>{ for(let c=0;c<16;c++){ const ch=row[c]; if(ch && ch!=='.' && col[ch]) px[r+','+c]=col[ch]; } });
+  if(extra) extra(px);
+  let s='';
+  for(const k in px){ const [r,c]=k.split(','); s+=`<rect x="${c}" y="${r}" width="1.04" height="1.04" fill="${px[k]}"/>`; }
+  return `<svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true">${s}</svg>`;
+}
+function petSVG(si, mood){
+  const st=STAGES[si], sp=SPRITES[st.sprite], ink='#4A3F55';
+  const col={o:ink,b:st.body,a:st.acc,y:'#FFD36B',r:'#FF9A80',g:'#7CCAA2',w:'#FFFFFF'};
+  return pixSVG(sp.grid, col, px=>{
+    const f=sp.face; if(!f) return;
+    const set=(r,c,v)=>{ px[r+','+c]=v; };
+    f.eyes.forEach(([r,c],i)=>{
+      if(mood==='happy'){ set(r,c-1,ink); set(r-1,c,ink); set(r,c+1,ink); }
+      else if(mood==='sleepy'){ set(r,i?c:c-1,ink); set(r,i?c+1:c,ink); }
+      else { set(r,c,ink); set(r-1,c,ink); }
+    });
+    f.cheeks.forEach(([r,c])=>set(r,c,'#FF9FB5'));
+    const [mr,mc]=f.mouth;
+    if(mood==='happy'){ [mc-1,mc,mc+1,mc+2].forEach(c=>set(mr-1,c,ink)); set(mr,mc,'#FF8A7A'); set(mr,mc+1,'#FF8A7A'); }
+    else if(mood==='sleepy'){ set(mr,mc,ink); set(mr,mc+1,ink); }
+    else { set(mr-1,mc-1,ink); set(mr,mc,ink); set(mr,mc+1,ink); set(mr-1,mc+2,ink); }
+  });
+}
+function monSVG(color){
+  const ink='#1A1420';
+  return pixSVG(MON_GRID,{o:ink,b:color},px=>{
+    const set=(r,c,v)=>{ px[r+','+c]=v; };
+    set(8,4,ink);set(9,5,ink);set(8,11,ink);set(9,10,ink);
+    [[10,5],[10,10]].forEach(([r,c])=>{ set(r,c,'#fff'); set(r,c+(c<8?1:-1),ink); });
+    [5,6,7,8,9,10].forEach(c=>set(12,c,ink)); set(11,6,'#fff'); set(11,9,'#fff');
+    set(5,7,'#ffffff99');
+  });
+}
+const HEART = [".oo.oo.","ooooooo","ooooooo",".ooooo.","..ooo..","...o..."];
+function heartSVG(color){
+  let s=''; HEART.forEach((row,r)=>{ for(let c=0;c<7;c++) if(row[c]==='o') s+=`<rect x="${c}" y="${r}" width="1.04" height="1.04" fill="${color}"/>`; });
+  return `<svg viewBox="0 0 7 6" shape-rendering="crispEdges" aria-hidden="true">${s}</svg>`;
+}
+const SPARK = '<svg viewBox="0 0 5 5" shape-rendering="crispEdges" aria-hidden="true"><rect x="2" y="0" width="1" height="5" fill="#E2A93B"/><rect x="0" y="2" width="5" height="1" fill="#E2A93B"/></svg>';
+
+// ---------- 日付・時間 ----------
+const pad = n => String(n).padStart(2,'0');
+const dk = d => d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const parseK = k => { const [y,m,d]=k.split('-').map(Number); return new Date(y,m-1,d); };
+const addDays = (d,n) => { const x=new Date(d); x.setDate(x.getDate()+n); return x; };
+const WD = ['日','月','火','水','木','金','土'];
+const WJ = ['月','火','水','木','金','土','日'];
+const todayK = () => dk(new Date());
+const fmtDay = k => { const d=parseK(k); return (d.getMonth()+1)+'月'+d.getDate()+'日('+WD[d.getDay()]+')'; };
+const fmtMin = m => { m=Math.round(m); const h=Math.floor(m/60), r=m%60; return h?(r?h+'時間'+r+'分':h+'時間'):r+'分'; };
+const fmtShort = m => m<60 ? Math.round(m)+'分' : (m/60).toFixed(1).replace(/\.0$/,'')+'h';
+const hhmm = m => Math.floor(m/60)+':'+pad(Math.round(m)%60);
+
+// ---------- データ ----------
+const uid = () => Math.random().toString(36).slice(2,9);
+const str = (v,max) => typeof v==='string' ? v.trim().slice(0,max) : '';
+const esc = s => String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function defaults(){
+  return { v:2, title:'エゴ育成ゲーム', pet:'エゴちゃん', named:false, setup:false, start:todayK(), seen:0, goal:CONFIG.goal, sound:true, weekly:{}, notify:{on:false, time:'21:00', last:''},
+    genres: CONFIG.genres.map(g=>({id:uid(), name:g.name, color:g.color, items:g.items.map(n=>({id:uid(), name:n}))})),
+    questPool: CONFIG.quests.slice(), logs:[], running:null, quests:{}, battles:[], toi:{} };
+}
+function normalize(o){
+  if(!o || typeof o!=='object') return null;
+  if(o.app==='ego-game' && o.data) o=o.data;
+  if(!Array.isArray(o.genres)) return null;
+  const d=defaults();
+  d.title=str(o.title,24)||d.title; d.pet=str(o.pet,10)||d.pet; d.named=!!o.named; d.setup=!!o.setup||Array.isArray(o.logs);
+  d.start=/^\d{4}-\d{2}-\d{2}$/.test(o.start)?o.start:d.start;
+  d.seen=Number.isInteger(o.seen)?o.seen:0;
+  d.goal=Number.isFinite(o.goal)&&o.goal>=5&&o.goal<=MAX_MIN?Math.round(o.goal):d.goal;
+  d.sound=o.sound!==false;
+  d.weekly={};
+  if(o.weekly&&typeof o.weekly==='object') for(const k in o.weekly){ const v=o.weekly[k]; if(okK(k)&&v&&typeof v==='object'){ d.weekly[k]={pick:str(v.pick,20), memo:str(v.memo,300)}; } }
+  if(o.notify&&typeof o.notify==='object') d.notify={on:!!o.notify.on, time:/^\d{2}:\d{2}$/.test(o.notify.time)?o.notify.time:'21:00', last:str(o.notify.last,10)};
+  d.genres=o.genres.filter(g=>g&&typeof g==='object').slice(0,MAX_GENRES).map(g=>({
+    id:str(g.id,20)||uid(), name:str(g.name,12)||'ジャンル', color:PALETTE.some(p=>p.id===g.color)?g.color:'rose',
+    items:(Array.isArray(g.items)?g.items:[]).filter(i=>i&&typeof i==='object').slice(0,MAX_ITEMS).map(i=>({id:str(i.id,20)||uid(), name:str(i.name,20)||'メニュー'}))}));
+  if(Array.isArray(o.questPool)) d.questPool=o.questPool.map(q=>str(q,30)).filter(Boolean).slice(0,MAX_QUESTS);
+  d.logs=Array.isArray(o.logs)?o.logs.filter(l=>l&&Number.isFinite(l.at)&&Number.isFinite(l.min)&&l.min>0).map(l=>({
+    id:str(l.id,20)||uid(), at:l.at, min:Math.min(MAX_MIN,Math.round(l.min)), g:str(l.g,20), i:str(l.i,20), n:str(l.n,20)||'メニュー', memo:str(l.memo,300)})):[];
+  if(o.running && Number.isFinite(o.running.at)) d.running={at:o.running.at, g:str(o.running.g,20), i:str(o.running.i,20), n:str(o.running.n,20)};
+  const okK=k=>/^\d{4}-\d{2}-\d{2}$/.test(k);
+  d.quests={};
+  if(o.quests && typeof o.quests==='object') for(const k in o.quests){ const v=o.quests[k]; if(okK(k)&&Array.isArray(v)){ const a=v.map(q=>str(q,30)).filter(Boolean); if(a.length) d.quests[k]=a; } }
+  d.toi={};
+  if(o.toi && typeof o.toi==='object') for(const k in o.toi){ const v=o.toi[k]; if(okK(k)&&v&&typeof v==='object'&&Number.isInteger(v.i)){ const t=str(v.text,400); if(t||v.mark) d.toi[k]={i:v.i, q:str(v.q,60), text:t, mark:!!v.mark}; } }
+  d.battles=Array.isArray(o.battles)?o.battles.filter(b=>b&&typeof b.at==='number').map(b=>({at:b.at, mon:str(b.mon,20), feel:str(b.feel,12), memo:str(b.memo,400), ans:Array.isArray(b.ans)?b.ans.map(a=>str(a,30)):[]})):[];
+  return d;
+}
+function loadData(){ try{ const s=localStorage.getItem(KEY); if(s) return normalize(JSON.parse(s)); }catch(e){} return null; }
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(D)); }catch(e){} }
+
+let D = loadData();
+if(!D) D = defaults();
+
+// ---------- 集計 ----------
+const logsOn = k => D.logs.filter(l=>dk(new Date(l.at))===k);
+const dayMin = k => logsOn(k).reduce((a,l)=>a+l.min,0);
+const dayQuests = k => (D.quests[k]||[]).length;
+// ---------- きょうの問い（kotoba.js の365問を日付で割り当て） ----------
+const TOI = (Array.isArray(W.toi)?W.toi:[]).filter(t=>t&&typeof t.q==='string');
+function toiIndex(k){ if(!TOI.length) return -1; const d=parseK(k); const doy=Math.round((d-new Date(d.getFullYear(),0,1))/864e5); return doy%TOI.length; }
+function toiOf(k){ const i=toiIndex(k); return i<0?null:Object.assign({i},TOI[i]); }
+const battlesOn = k => D.battles.filter(b=>dk(new Date(b.at))===k).length;
+const totalMin = () => D.logs.reduce((a,l)=>a+l.min,0);
+function totalXP(){
+  let x=totalMin();
+  for(const k in D.quests) x+=D.quests[k].length*CONFIG.xp.quest;
+  for(const k in D.toi) if(D.toi[k].text) x+=CONFIG.xp.toi;
+  return x + D.battles.length*CONFIG.xp.boss;
+}
+const stageOf = xp => STAGES.reduce((a,s,i)=>xp>=s.at?i:a,0);
+function mood(){
+  if(D.running) return 'work';
+  const k=todayK(), m=dayMin(k);
+  if(m>=D.goal) return 'happy';
+  if(!m && !dayQuests(k) && !battlesOn(k)) return 'sleepy';
+  return 'normal';
+}
+const anyOn = k => dayMin(k)>0 || dayQuests(k)>0 || battlesOn(k)>0 || !!(D.toi[k]&&D.toi[k].text);
+function streak(){ let d=new Date(); if(!anyOn(dk(d))) d=addDays(d,-1); let n=0; while(anyOn(dk(d))){ n++; d=addDays(d,-1); } return n; }
+function bestStreak(){
+  const ks=new Set([...D.logs.map(l=>dk(new Date(l.at))),...Object.keys(D.quests),...Object.keys(D.toi),...D.battles.map(b=>dk(new Date(b.at)))]);
+  let best=0,cur=0,prev=null;
+  [...ks].filter(anyOn).sort().forEach(k=>{ cur=(prev && dk(addDays(parseK(prev),1))===k)?cur+1:1; best=Math.max(best,cur); prev=k; });
+  return best;
+}
+const genreById = id => D.genres.find(g=>g.id===id);
+const colorOfLog = l => { const g=genreById(l.g); return g?hexOf(g.color):'#CFC6D6'; };
+
+// ---------- きょうのクエスト（日付で決まる） ----------
+function seeded(seed){ return ()=>{ seed|=0; seed=seed+0x6D2B79F5|0; let t=Math.imul(seed^seed>>>15,1|seed); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+function questsFor(k){
+  const pool=D.questPool.slice(); if(!pool.length) return [];
+  let h=0; for(const ch of k) h=Math.imul(h^ch.charCodeAt(0),16777619);
+  const rnd=seeded(h), out=[];
+  while(out.length<Math.min(CONFIG.questsPerDay,pool.length)) out.push(pool.splice(Math.floor(rnd()*pool.length),1)[0]);
+  return out;
+}
+
+// ---------- 小物 ----------
+let toastT;
+function toast(t){ const e=$('#toast'); e.textContent=t; e.hidden=false; clearTimeout(toastT); toastT=setTimeout(()=>e.hidden=true,2400); }
+function modal(title, body, acts){
+  $('#mTitle').textContent=title;
+  const b=$('#mBody'); b.innerHTML=''; if(typeof body==='string') b.innerHTML=body; else if(body) b.append(body);
+  const a=$('#mActs'); a.innerHTML='';
+  acts.forEach(x=>{ const btn=document.createElement('button'); btn.className='btn'+(x.primary?' primary':''); btn.textContent=x.label;
+    btn.onclick=()=>{ if(x.fn && x.fn()===false) return; $('#modal').hidden=true; }; a.append(btn); });
+  $('#modal').hidden=false; const f=b.querySelector('input,textarea')||a.lastChild; if(f) f.focus({preventScroll:true});
+}
+function twoTap(btn, label, armedLabel, fn){
+  let armed=false,t; btn.textContent=label;
+  btn.onclick=()=>{ if(!armed){ armed=true; btn.textContent=armedLabel; btn.classList.add('armed');
+      t=setTimeout(()=>{ armed=false; btn.textContent=label; btn.classList.remove('armed'); },3000); return; }
+    clearTimeout(t); fn(); };
+}
+function el(tag, attrs, ...kids){
+  const e=document.createElement(tag);
+  for(const k in (attrs||{})){ const v=attrs[k]; if(k==='class') e.className=v; else if(k==='style') e.style.cssText=v; else if(k.startsWith('on')) e[k]=v; else if(v!==false && v!=null) e.setAttribute(k,v); }
+  kids.flat().forEach(c=>{ if(c!=null && c!==false) e.append(c); });
+  return e;
+}
+
+// ---------- 経験値の変化を受けて ----------
+let lastLevel = levelOf(totalXP());
+function afterChange(gain){
+  save();
+  const xp=totalXP(), lv=levelOf(xp), si=stageOf(xp);
+  if(gain>0) popXP(gain);
+  renderLCD();
+  if(si>D.seen){
+    D.seen=si; save(); setTimeout(()=>beep('big'),400);
+    setTimeout(()=>modal('おや…？', `<div class="evo">${petSVG(si,'happy')}</div><p style="text-align:center;margin:0">${esc(D.pet)}の ようすが…！<br><b>「${STAGES[si].name}」に そだった！</b></p>`,[{label:'やったね',primary:true}]), 500);
+  } else if(lv>lastLevel){ toast('レベルが あがった！ Lv.'+lv); }
+  lastLevel=lv;
+}
+// ごほうびの音（ファイル不要。せっていでOFFにできる）
+let audioCtx=null;
+function beep(kind){
+  if(!D.sound) return;
+  try{
+    audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state==='suspended') audioCtx.resume();
+    const notes = kind==='big' ? [[523,0],[659,.09],[784,.18],[1047,.3]] : kind==='tiny' ? [[880,0]] : [[659,0],[880,.1]];
+    notes.forEach(([f,t])=>{
+      const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+      o.type='square'; o.frequency.value=f;
+      const at=audioCtx.currentTime+t;
+      g.gain.setValueAtTime(0.0001,at); g.gain.exponentialRampToValueAtTime(0.08,at+0.01); g.gain.exponentialRampToValueAtTime(0.0001,at+(kind==='big'?0.28:0.16));
+      o.connect(g); g.connect(audioCtx.destination); o.start(at); o.stop(at+0.3);
+    });
+  }catch(e){}
+}
+// ごほうびの演出（記録した瞬間）
+function celebrate(big){
+  const area=$('#stageArea'), pet=$('#pet');
+  const si=stageOf(totalXP());
+  pet.innerHTML=petSVG(si,'happy');
+  pet.classList.remove('jump'); void pet.offsetWidth; pet.classList.add('jump');
+  for(let i=0;i<(big?10:6);i++){
+    const sp=el('div',{class:'confetti',style:`left:${10+Math.random()*80}%;top:${10+Math.random()*50}%;background:${['#F59BB0','#F7C960','#86B7E6','#7CCAA2','#B59AE6'][i%5]};animation-delay:${(i*0.06).toFixed(2)}s`});
+    area.append(sp); setTimeout(()=>sp.remove(),1300);
+  }
+  const set=LINES.reward; $('#bubble').textContent=set[Math.floor(Math.random()*set.length)];
+  beep(big?'big':'small');
+  setTimeout(()=>{ pet.classList.remove('jump'); renderLCD(); },1400);
+}
+function popXP(n){
+  const area=$('#stageArea');
+  const h=el('div',{class:'pop'}); h.innerHTML=heartSVG('#F27E9C'); area.append(h);
+  const x=el('div',{class:'pop xp',style:'margin-left:34px'},'+'+n+'EXP'); area.append(x);
+  setTimeout(()=>{ h.remove(); x.remove(); },950);
+  const p=$('#pet'); p.classList.add('jump'); setTimeout(()=>p.classList.remove('jump'),1100);
+}
+
+// ---------- 画面：LCD ----------
+const LINES = Object.assign({egg:['…ことこと'],sleepy:['…むにゃ'],normal:['いいかんじ！'],happy:['もくひょう たっせい！'],work:['いっしょに そだってる…'],reward:['やったね！']}, W.lines||{});
+let lineIdx=0;
+function speak(force){
+  const si=stageOf(totalXP()), m=mood(), set=si===0&&m!=='work'?LINES.egg:LINES[m];
+  if(force) lineIdx++;
+  $('#bubble').textContent=set[lineIdx%set.length];
+}
+function renderLCD(){
+  const xp=totalXP(), si=stageOf(xp), st=STAGES[si], m=mood(), k=todayK();
+  $('#devTitle').textContent=D.title; document.title=D.title;
+  $('#lvl').textContent='Lv.'+levelOf(xp)+' '+st.name;
+  $('#lcdToday').textContent='きょう '+hhmm(dayMin(k));
+  const pet=$('#pet');
+  pet.innerHTML=petSVG(si,m==='work'?'happy':m);
+  pet.setAttribute('aria-label',D.pet+'（'+st.name+'）');
+  pet.className='pet '+(m==='work'?'work':si===0?'wobble':m==='sleepy'?'sleep':'hop');
+  const area=$('#stageArea');
+  area.querySelectorAll('.zzz,.spark').forEach(n=>n.remove());
+  if(si>0 && m==='sleepy') area.append(el('div',{class:'zzz'},'z z'));
+  if(m==='happy') [[12,58],[80,40],[18,86]].forEach(([l,t],i)=>{ const s=el('div',{class:'spark',style:`left:${l}%;top:${t}px;animation-delay:${i*.3}s`}); s.innerHTML=SPARK; area.append(s); });
+  speak(false);
+  const ms=$('#meters'); ms.innerHTML='';
+  const today=logsOn(k);
+  D.genres.forEach(g=>{ const mm=today.filter(l=>l.g===g.id).reduce((a,l)=>a+l.min,0); ms.append(el('div',{class:'meter'},el('span',null,g.name),el('span',null,fmtShort(mm)))); });
+  const next=STAGES[si+1];
+  if(next){ $('#xpfill').style.width=Math.min(100,(xp-st.at)/(next.at-st.at)*100)+'%'; $('#xptext').textContent='つぎ あと'+(next.at-xp); }
+  else { $('#xpfill').style.width='100%'; $('#xptext').textContent=xp+'EXP'; }
+}
+$('#pet').onclick=()=>{ speak(true); const p=$('#pet'); p.classList.add('jump'); setTimeout(()=>p.classList.remove('jump'),1100); };
+
+// ---------- 記録の追加 ----------
+function addLog(at, min, g, item, memo){
+  min=Math.min(MAX_MIN,Math.round(min)); if(!(min>0)) return;
+  const before=dayMin(todayK());
+  D.logs.push({id:uid(), at, min, g:g.id, i:item.id, n:item.name, memo:str(memo,300)});
+  afterChange(min);
+  const nowMin=dayMin(todayK());
+  celebrate(before<D.goal && nowMin>=D.goal);
+  if(before<D.goal && nowMin>=D.goal) setTimeout(()=>toast('きょうの もくひょう たっせい！'),300);
+}
+
+// ---------- 画面：そだてる ----------
+let viewDay=todayK(), selected=null; // selected = {g:genreId, i:itemId}
+function findItem(gid, iid){ const g=genreById(gid); const it=g&&g.items.find(x=>x.id===iid); return it?{g,it}:null; }
+function menuChips(onPick){
+  const wrap=el('div');
+  D.genres.forEach(g=>{
+    if(!g.items.length) return;
+    const chips=el('div',{class:'chips'});
+    g.items.forEach(it=>{
+      const on=selected && selected.i===it.id;
+      chips.append(el('button',{class:'chip',style:'--g:'+hexOf(g.color),'aria-pressed':String(!!on),onclick:()=>{ selected={g:g.id,i:it.id}; onPick(); }},it.name));
+    });
+    wrap.append(el('div',{class:'chips-g'},el('small',null,g.name),chips));
+  });
+  return wrap;
+}
+function renderToday(){
+  const s=$('#tab-today'); s.innerHTML='';
+  if(selected && !findItem(selected.g,selected.i)) selected=null;
+  const isToday=viewDay===todayK();
+  if(!D.setup) s.append(el('div',{class:'banner'},el('b',null,'まずは 育成メニューを 決めよう'),
+    el('p',{class:'hint',style:'margin:0 0 8px'},'じぶんを育てるために やりたいことを 登録します。いまは おためしの メニューが 入っています。'),
+    el('button',{class:'btn primary',onclick:()=>showTab('settings')},'育成メニューを 決める')));
+  const prev=el('button',{class:'navbtn','aria-label':'前の日',onclick:()=>{ viewDay=dk(addDays(parseK(viewDay),-1)); renderToday(); }},'‹');
+  const next=el('button',{class:'navbtn','aria-label':'次の日',disabled:isToday?'':false,onclick:()=>{ viewDay=dk(addDays(parseK(viewDay),1)); renderToday(); }},'›');
+  s.append(el('div',{class:'datenav'},prev,el('div',null,el('b',null,fmtDay(viewDay)),el('small',null,isToday?'きょう':'あとから記録できます')),next));
+
+  // 合計
+  const logs=logsOn(viewDay), m=logs.reduce((a,l)=>a+l.min,0);
+  const tot=el('div',{class:'card total'},
+    el('div',{class:'goal'},isToday?'きょう そだてた じかん':'この日 そだてた じかん'),
+    el('div',{class:'big',id:'dayTotal'},fmtMin(m)),
+    el('div',{class:'goalbar'},el('i',{style:'width:'+Math.min(100,m/D.goal*100)+'%'})),
+    el('div',{class:'goal'},m>=D.goal?'もくひょう '+fmtMin(D.goal)+' たっせい！':'もくひょう '+fmtMin(D.goal)+' まで あと '+fmtMin(D.goal-m)));
+  const gs=el('div',{class:'gsum',style:'margin-top:6px'});
+  D.genres.forEach(g=>{ const mm=logs.filter(l=>l.g===g.id).reduce((a,l)=>a+l.min,0); if(mm) gs.append(el('span',null,el('i',{class:'dot',style:'background:'+hexOf(g.color)}),g.name+' '+fmtMin(mm))); });
+  tot.append(gs); s.append(tot);
+  // 今週そだてたいもの（先週のふりかえりで選んだもの）
+  if(isToday){
+    const thisWk=dk(weekStart(new Date())), lastWk=dk(addDays(weekStart(new Date()),-7));
+    const pick=(D.weekly[lastWk]&&D.weekly[lastWk].pick)||'';
+    if(pick) s.append(el('p',{class:'hint',style:'text-align:center;margin:-4px 0 10px'},'今週 そだてたいもの：'+pick));
+    const wd=(new Date().getDay()+6)%7;
+    if(wd===6 && !D.weekly[thisWk]) s.append(el('button',{class:'btn',style:'display:block;margin:0 auto 12px',onclick:()=>showTab('review')},'日曜日。今週の ふりかえりを 1問だけ →'));
+  }
+  // きょうの問い
+  const toi=toiOf(viewDay);
+  if(toi){
+    const saved=D.toi[viewDay]||null;
+    const c=el('div',{class:'card toi'},
+      el('div',{class:'toihead'},el('span',null,isToday?'きょうの問い':'この日の問い'),el('span',{class:'toinum'},'No.'+(toi.i+1)+(toi.deep?'　🕯️':''))),
+      el('p',{class:'toiq'},toi.q),
+      toi.h?el('p',{class:'toih'},toi.h):null,
+      toi.deep?el('p',{class:'hint'},'🕯️ すこし深い問い。つらければ とばしてOK。深い傷は 専門家と いっしょに。'):null);
+    const ta=el('textarea',{class:'in',maxlength:'400',placeholder:'きづいたことを ひとこと（なくてもOK）','aria-label':'気づきメモ'},saved&&saved.text||'');
+    const mark=el('button',{class:'btn sm toimark','aria-pressed':String(!!(saved&&saved.mark))},(saved&&saved.mark)?'★ ドキッとした':'☆ ドキッとした');
+    mark.onclick=()=>{ const cur=D.toi[viewDay]||{i:toi.i,q:toi.q,text:'',mark:false}; cur.mark=!cur.mark; D.toi[viewDay]=cur; if(!cur.text&&!cur.mark) delete D.toi[viewDay]; save(); renderToday(); };
+    const ok=el('button',{class:'btn primary sm',onclick:()=>{
+      const t=ta.value.trim().slice(0,400); const had=!!(saved&&saved.text);
+      const cur=D.toi[viewDay]||{i:toi.i,q:toi.q,text:'',mark:false}; cur.text=t; cur.i=toi.i; cur.q=toi.q; D.toi[viewDay]=cur;
+      if(!cur.text&&!cur.mark) delete D.toi[viewDay];
+      afterChange(t&&!had?CONFIG.xp.toi:0); if(t&&!had) beep('tiny'); toast(t?'書きとめたよ':'メモを けしたよ'); renderToday();
+    }},saved&&saved.text?'書きなおす':'書きとめる');
+    c.append(ta,el('div',{class:'btnrow',style:'justify-content:space-between;align-items:center'},mark,ok));
+    s.append(c);
+  }
+
+  // きょうの ちいさなこと（クエスト）
+  if(isToday){
+    const qs=questsFor(viewDay), done=D.quests[viewDay]||[];
+    if(qs.length){
+      const qc=el('div',{class:'card'},el('h3',null,'きょうの ちいさなこと'),el('p',{class:'hint'},'1つ できたら '+CONFIG.xp.quest+'EXP。やらなくても だいじょうぶ。'));
+      const box=el('div',{class:'items',style:'grid-template-columns:1fr'});
+      qs.forEach(q=>{
+        const on=done.includes(q);
+        box.append(el('button',{class:'item'+(on?' on':''),style:'--g:#E8B84A',role:'checkbox','aria-checked':String(on),onclick:()=>{
+          const a=D.quests[viewDay]||(D.quests[viewDay]=[]); let gain=0;
+          if(a.includes(q)) a.splice(a.indexOf(q),1); else { a.push(q); gain=CONFIG.xp.quest; }
+          if(!a.length) delete D.quests[viewDay];
+          afterChange(gain); if(gain) beep('tiny'); renderToday();
+        }},el('span',{class:'box'}),el('span',null,q)));
+      });
+      qc.append(box); s.append(qc);
+    }
+  }
+  const hasItems=D.genres.some(g=>g.items.length);
+  // タイマー
+  if(isToday){
+    const c=el('div',{class:'card'},el('h3',null,'タイマーで はかる'));
+    if(D.running){
+      c.append(el('div',{class:'running-name'},D.running.n+' を そだて中'),el('div',{class:'clock',id:'clock'},'0:00:00'),
+        el('p',{class:'hint',style:'text-align:center;margin:0'},'ページを とじても はかり つづけます'),
+        el('button',{class:'bigbtn stop',onclick:stopTimer},'ストップして 記録'));
+    } else if(!hasItems){
+      c.append(el('p',{class:'hint'},'育成メニューが ありません。「せってい」で つくってね。'));
+    } else {
+      c.append(el('p',{class:'hint'},'なにを そだてる？ えらんで スタート'),menuChips(renderToday));
+      const sel=selected && findItem(selected.g,selected.i);
+      c.append(el('button',{class:'bigbtn',disabled:sel?false:'',onclick:()=>{ if(!sel) return; D.running={at:Date.now(),g:sel.g.id,i:sel.it.id,n:sel.it.name}; save(); renderLCD(); renderToday(); timerNotify(); }},
+        sel?'「'+sel.it.name+'」を スタート':'メニューを えらんでね'));
+    }
+    s.append(c);
+  }
+  // あとから記録
+  if(hasItems){
+    const c=el('div',{class:'card'},el('h3',null,'あとから 記録する'));
+    const minIn=el('input',{class:'in',type:'number',inputmode:'numeric',min:'1',max:String(MAX_MIN),placeholder:'分','aria-label':'分数'});
+    const memo=el('textarea',{class:'in',maxlength:'300',placeholder:'メモ（きづいたこと・やったこと／なくてもOK）','aria-label':'メモ'});
+    c.append(el('p',{class:'hint'},'1. メニューを えらぶ'),menuChips(renderToday));
+    c.append(el('p',{class:'hint',style:'margin:10px 0 4px'},'2. じかんを いれる'),
+      el('div',{class:'quick'},[15,30,60,120].map(n=>el('button',{onclick:()=>{ minIn.value=String((+minIn.value||0)+n); }},'+'+(n<60?n+'分':n/60+'時間')))),
+      minIn,el('p',{class:'hint',style:'margin:10px 0 4px'},'3. メモ'),memo,
+      el('button',{class:'bigbtn',onclick:()=>{
+        const sel=selected && findItem(selected.g,selected.i);
+        const v=Math.round(+minIn.value);
+        if(!sel){ toast('メニューを えらんでね'); return; }
+        if(!(v>0)){ toast('じかんを いれてね'); return; }
+        const at=isToday?Date.now()-v*60000:parseK(viewDay).getTime()+12*3600000;
+        addLog(Math.max(at,parseK(viewDay).getTime()), v, sel.g, sel.it, memo.value);
+        toast(sel.it.name+' '+fmtMin(v)+' 記録したよ'); renderToday();
+      }},'記録する'));
+    s.append(c);
+  }
+  // この日の記録
+  const lc=el('div',{class:'card'},el('h3',null,'この日の 記録'));
+  if(!logs.length) lc.append(el('p',{class:'hint',style:'margin:0'},'まだ ありません。'));
+  const ul=el('ul',{class:'loglist'});
+  logs.slice().sort((a,b)=>b.at-a.at).forEach(l=>{
+    const d=new Date(l.at), del=el('button',{class:'btn sm del'});
+    twoTap(del,'けす','もう1回で けす',()=>{ D.logs=D.logs.filter(x=>x.id!==l.id); afterChange(0); renderToday(); });
+    ul.append(el('li',null,el('div',{class:'top'},el('span',null,el('i',{class:'dot',style:'background:'+colorOfLog(l)}),l.n+'　'+fmtMin(l.min)),del),
+      el('div',{class:'meta'},pad(d.getHours())+':'+pad(d.getMinutes())+(genreById(l.g)?'　'+genreById(l.g).name:'')),
+      l.memo?el('div',{class:'memo'},l.memo):null));
+  });
+  lc.append(ul); s.append(lc);
+  tick();
+}
+function stopTimer(){
+  const r=D.running; if(!r) return;
+  const mins=Math.max(0,(Date.now()-r.at)/60000);
+  const found=findItem(r.g,r.i);
+  const minIn=el('input',{class:'in',type:'number',inputmode:'numeric',min:'1',max:String(MAX_MIN),value:String(Math.min(MAX_MIN,Math.round(mins))),'aria-label':'分数'});
+  const memo=el('textarea',{class:'in',maxlength:'300',placeholder:'メモ（きづいたこと・やったこと／なくてもOK）','aria-label':'メモ'});
+  const discard=el('button',{class:'btn sm del',style:'margin-top:10px'});
+  twoTap(discard,'記録しないで リセット','もう1回で リセット',()=>{ D.running=null; save(); $('#modal').hidden=true; renderLCD(); renderToday(); timerNotify(); });
+  const body=el('div',null,
+    el('p',{style:'margin:0 0 8px'},'「'+r.n+'」を '+fmtMin(mins)+' そだてた！'),
+    mins<1?el('p',{class:'hint'},'1分未満なので、記録するなら 分を いれてね。'):null,
+    mins>180?el('p',{class:'hint'},'タイマーの とめわすれ かも？ 分を なおせます。'):null,
+    el('label',{class:'f'},'じかん（分）'),minIn,el('div',{style:'height:8px'}),el('label',{class:'f'},'メモ'),memo,discard);
+  modal('おつかれさま', body, [{label:'もどる'},{label:'記録する',primary:true,fn:()=>{
+    const v=Math.round(+minIn.value);
+    if(!(v>0)){ toast('じかんを いれてね'); return false; }
+    if(!found){ toast('このメニューは けされています'); return false; }
+    D.running=null; timerNotify();
+    addLog(r.at, v, found.g, found.it, memo.value);
+    renderToday();
+  }}]);
+}
+function tick(){
+  const c=$('#clock'); if(!c || !D.running) return;
+  const s=Math.max(0,Math.floor((Date.now()-D.running.at)/1000));
+  c.textContent=Math.floor(s/3600)+':'+pad(Math.floor(s%3600/60))+':'+pad(s%60);
+}
+setInterval(tick,1000);
+
+// ---------- おしらせ（通知）----------
+// スマホの通知は https の置き場所＋ホーム画面に追加したときに動く。ページが閉じている間は
+// 端末側の制約で時刻ぴったりは保証できないので、開いたときにも必ず出す（取りこぼし防止）。
+const canNotify = () => 'Notification' in window && 'serviceWorker' in navigator && /^https?:$/.test(location.protocol);
+async function swReg(){ try{ return await navigator.serviceWorker.ready; }catch(e){ return null; } }
+function notifyState(){ return !canNotify() ? 'unsupported' : Notification.permission; }
+async function askNotify(){
+  if(!canNotify()) return 'unsupported';
+  try{ return await Notification.requestPermission(); }catch(e){ return 'denied'; }
+}
+async function showNote(title, body, tag, extra){
+  const reg=await swReg(); if(!reg || Notification.permission!=='granted') return false;
+  try{ await reg.showNotification(title, Object.assign({body, tag, icon:'icon-192.png', badge:'icon-192.png', lang:'ja', renotify:false}, extra||{})); return true; }catch(e){ return false; }
+}
+async function closeNote(tag){ const reg=await swReg(); if(!reg) return; try{ (await reg.getNotifications({tag})).forEach(n=>n.close()); }catch(e){} }
+// タイマー中の通知（#3）
+async function timerNotify(){
+  if(!D.running){ closeNote('timer'); return; }
+  const d=new Date(D.running.at), m=Math.floor((Date.now()-D.running.at)/60000);
+  await showNote(D.running.n+' を そだて中', (m?m+'分 ':'')+'（'+pad(d.getHours())+':'+pad(d.getMinutes())+'〜）タップして ストップ', 'timer', {silent:true, requireInteraction:true, data:{open:'today'}});
+}
+setInterval(()=>{ if(D.running && canNotify() && Notification.permission==='granted') timerNotify(); }, 60000);
+// 毎日のおしらせ（#2）：設定時刻を過ぎていて、きょうまだ出していなければ出す
+let remindT=null;
+function todayToi(){ const t=toiOf(todayK()); return t?t.q:''; }
+async function fireRemind(){
+  const n=D.notify; if(!n.on || !canNotify() || Notification.permission!=='granted') return;
+  if(n.last===todayK()) return;
+  const [h,mi]=n.time.split(':').map(Number); const now=new Date();
+  if(now.getHours()*60+now.getMinutes() < h*60+mi) return;
+  const q=todayToi(), m=dayMin(todayK());
+  const ok=await showNote('きょうの問い', q+(m?'\n（きょう '+fmtMin(m)+' そだてた）':''), 'daily', {data:{open:'today'}});
+  if(ok){ n.last=todayK(); save(); }
+  syncRemindCfg();
+}
+async function syncRemindCfg(){
+  try{ const reg=await swReg(); const n=D.notify; if(reg&&reg.active) reg.active.postMessage({type:'remind-config', on:n.on, time:n.time, last:n.last, q:todayToi()});
+    if(reg && n.on && 'periodicSync' in reg){ try{ await reg.periodicSync.register('daily-remind',{minInterval:6*3600*1000}); }catch(e){} } }catch(e){}
+}
+function scheduleRemind(){
+  clearTimeout(remindT);
+  const n=D.notify; if(!n.on){ syncRemindCfg(); return; }
+  const [h,mi]=n.time.split(':').map(Number); const t=new Date(); t.setHours(h,mi,0,0);
+  if(t<=Date.now()) t.setDate(t.getDate()+1);
+  remindT=setTimeout(()=>{ fireRemind(); scheduleRemind(); }, Math.min(t-Date.now(), 2147000000));
+  fireRemind();
+}
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden){ fireRemind(); if(D.running) timerNotify(); } });
+if('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message',e=>{ const d=e.data||{}; if(d.type==='reminded'){ D.notify.last=d.date; save(); } if(d.type==='open'){ showTab(d.tab||'today'); } });
+
+// ---------- 画面：ふりかえり ----------
+let weekOffset=0;
+function weekStart(d){ const x=new Date(d); x.setHours(0,0,0,0); return addDays(x,-((x.getDay()+6)%7)); }
+function renderReview(){
+  const s=$('#tab-review'); s.innerHTML='';
+  const ws=addDays(weekStart(new Date()),weekOffset*7);
+  const keys=[...Array(7)].map((_,i)=>dk(addDays(ws,i)));
+  const weekLogs=keys.map(logsOn);
+  const sums=weekLogs.map(ls=>ls.reduce((a,l)=>a+l.min,0));
+  const max=Math.max(D.goal,...sums), tk=todayK();
+  const card=el('div',{class:'card'});
+  const we=addDays(ws,6);
+  card.append(el('div',{class:'datenav'},
+    el('button',{class:'navbtn','aria-label':'前の週',onclick:()=>{ weekOffset--; renderReview(); }},'‹'),
+    el('div',null,el('b',null,(ws.getMonth()+1)+'/'+ws.getDate()+' 〜 '+(we.getMonth()+1)+'/'+we.getDate()),el('small',null,'この週 '+fmtMin(sums.reduce((a,b)=>a+b,0)))),
+    el('button',{class:'navbtn','aria-label':'次の週',disabled:weekOffset>=0?'':false,onclick:()=>{ weekOffset++; renderReview(); }},'›')));
+  const bars=el('div',{class:'bars'});
+  const order=[...D.genres.map(g=>g.id),'_gone'];
+  weekLogs.forEach((ls,i)=>{
+    const parts={}; ls.forEach(l=>{ const id=genreById(l.g)?l.g:'_gone'; parts[id]=(parts[id]||0)+l.min; });
+    const st=el('div',{class:'stack',style:'height:'+(sums[i]/max*112)+'px'+(sums[i]>=D.goal?';box-shadow:0 0 0 2px var(--gold)':'')});
+    order.forEach(id=>{ if(parts[id]) st.append(el('i',{style:`height:${parts[id]/sums[i]*100}%;background:${id==='_gone'?'#CFC6D6':hexOf(genreById(id).color)}`})); });
+    bars.append(el('div',{class:'bar'},st,el('div',{class:'v'},sums[i]?fmtShort(sums[i]):'')));
+  });
+  card.append(bars, el('div',{class:'barlbl'},keys.map((k,i)=>el('span',{class:k===tk?'today':''},WJ[i]))));
+  const lg=el('div',{class:'legend'});
+  D.genres.forEach(g=>lg.append(el('span',null,el('i',{style:'background:'+hexOf(g.color)}),g.name)));
+  card.append(lg);
+  const by={}; weekLogs.flat().forEach(l=>{ by[l.n]=(by[l.n]||0)+l.min; });
+  const top=Object.entries(by).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  const hit=sums.filter(v=>v>=D.goal).length;
+  card.append(el('p',{class:'hint',style:'margin:10px 0 0'},
+    'もくひょう たっせい：'+hit+'日（金わく）',el('br'),
+    top.length?'よく そだてた：'+top.map(([n,v])=>n+' '+fmtMin(v)).join('・'):'この週の 記録は まだ ありません'));
+  s.append(card);
+
+  // 週のふりかえり（1問だけ）
+  const wk=dk(ws), isThisWeek=weekOffset===0, wd=(new Date().getDay()+6)%7;
+  const saved=D.weekly[wk]||null;
+  if(isThisWeek || saved){
+    const topName=top.length?top[0][0]:null;
+    const wc=el('div',{class:'card toi'},el('div',{class:'toihead'},el('span',null,isThisWeek?'今週の ふりかえり':'この週の ふりかえり'),el('span',{class:'toinum'},WJ[wd]+'曜日')));
+    wc.append(el('p',{class:'toiq'},(topName?'今週 いちばん そだてたのは「'+topName+'」。':'今週は まだ 記録が すくなめ。')+'\n来週、ひとつ そだてたいのは？'));
+    const chips=el('div',{class:'chips'});
+    D.genres.forEach(g=>g.items.forEach(it=>chips.append(el('button',{class:'chip',style:'--g:'+hexOf(g.color),'aria-pressed':String(!!(saved&&saved.pick===it.name)),onclick:()=>{ const cur=D.weekly[wk]||{pick:'',memo:''}; cur.pick=cur.pick===it.name?'':it.name; D.weekly[wk]=cur; save(); beep('tiny'); renderReview(); }},it.name))));
+    const memo=el('textarea',{class:'in',maxlength:'300',placeholder:'ひとこと（なくてもOK）'},saved&&saved.memo||'');
+    memo.onchange=()=>{ const cur=D.weekly[wk]||{pick:'',memo:''}; cur.memo=memo.value.trim().slice(0,300); D.weekly[wk]=cur; save(); toast('書きとめたよ'); };
+    wc.append(chips, el('div',{style:'height:8px'}), memo);
+    if(!isThisWeek && !saved) wc.hidden=true;
+    s.append(wc);
+  }
+  // この週の気づき（問いへの答え）
+  const toiWeek=keys.filter(k=>D.toi[k]&&(D.toi[k].text||D.toi[k].mark));
+  if(toiWeek.length){
+    const c=el('div',{class:'card'},el('h3',null,'この週の 気づき'));
+    const ul=el('ul',{class:'loglist'});
+    toiWeek.slice().reverse().forEach(k=>{ const t=D.toi[k], d=parseK(k); ul.append(el('li',null,
+      el('div',{class:'meta'},(d.getMonth()+1)+'/'+d.getDate()+'('+WD[d.getDay()]+')　'+(t.mark?'★ ':'')+(t.q||('No.'+(t.i+1)))),
+      t.text?el('div',{class:'memo'},t.text):null)); });
+    c.append(ul); s.append(c);
+  }
+  // この週のメモ
+  const memos=weekLogs.flat().filter(l=>l.memo).sort((a,b)=>b.at-a.at);
+  if(memos.length){
+    const c=el('div',{class:'card'},el('h3',null,'この週の メモ'));
+    const ul=el('ul',{class:'loglist'});
+    memos.forEach(l=>{ const d=new Date(l.at); ul.append(el('li',null,el('div',{class:'meta'},(d.getMonth()+1)+'/'+d.getDate()+'('+WD[d.getDay()]+')　'+l.n+' '+fmtMin(l.min)),el('div',{class:'memo'},l.memo))); });
+    c.append(ul); s.append(c);
+  }
+
+  // 曜日ごと
+  const c2=el('div',{class:'card'},el('h3',null,'曜日ごとの へいきん'));
+  const sum=[0,0,0,0,0,0,0], occ=[0,0,0,0,0,0,0];
+  const first=D.logs.reduce((a,l)=>{ const k=dk(new Date(l.at)); return k<a?k:a; },D.start);
+  for(let d=parseK(first); dk(d)<=tk; d=addDays(d,1)){ const w=(d.getDay()+6)%7; occ[w]++; sum[w]+=dayMin(dk(d)); }
+  const avg=sum.map((v,i)=>occ[i]?v/occ[i]:0), amax=Math.max(10,...avg);
+  const b2=el('div',{class:'bars',style:'height:110px'});
+  avg.forEach(v=>b2.append(el('div',{class:'bar'},el('div',{class:'stack',style:`height:${v/amax*88}px;background:var(--gold)`}),el('div',{class:'v'},v?fmtShort(v):''))));
+  c2.append(b2, el('div',{class:'barlbl'},WJ.map(w=>el('span',null,w))));
+  const seenDays=occ.reduce((a,b)=>a+b,0), best=avg.indexOf(Math.max(...avg));
+  let worst=-1; avg.forEach((v,i)=>{ if(occ[i] && (worst<0 || v<avg[worst])) worst=i; });
+  c2.append(el('p',{class:'hint',style:'margin:10px 0 0'}, seenDays<14
+    ? '2週間ぶん たまると、ここに 曜日の くせが 出てくるよ（いま '+seenDays+'日め）。'
+    : 'いちばん そだててるのは '+WJ[best]+'曜日。'+(best!==worst?WJ[worst]+'曜日は ちいさめでOK、の日かも。':'')));
+  s.append(c2);
+
+  // きろく
+  s.append(el('div',{class:'card'},el('h3',null,'きろく'),el('div',{class:'stats'},
+    el('div',{class:'stat'},el('b',null,streak()+'日'),el('small',null,'れんぞく')),
+    el('div',{class:'stat'},el('b',null,bestStreak()+'日'),el('small',null,'さいこう')),
+    el('div',{class:'stat'},el('b',null,fmtShort(totalMin())),el('small',null,'そうじかん')))));
+  // ドキッとした問い（ぜんぶ）
+  const marked=Object.keys(D.toi).filter(k=>D.toi[k].mark).sort().reverse();
+  if(marked.length){
+    const c=el('div',{class:'card'},el('h3',null,'★ ドキッとした問い'),el('p',{class:'hint'},'ドキッとした問いほど、いまの踏み石。'));
+    const ul=el('ul',{class:'loglist'});
+    marked.slice(0,30).forEach(k=>{ const t=D.toi[k], d=parseK(k); ul.append(el('li',null,el('div',{class:'meta'},(d.getMonth()+1)+'/'+d.getDate()),el('div',null,t.q||('No.'+(t.i+1))),t.text?el('div',{class:'memo'},t.text):null)); });
+    c.append(ul); s.append(c);
+  }
+}
+
+// ---------- 画面：イヤな日（べつの部屋） ----------
+function renderQuest(){
+  const s=$('#tab-quest'); s.innerHTML='';
+  const intro=el('div',{class:'card',style:'text-align:center'},
+    el('p',{style:'margin:0 0 6px;font-weight:700'},(W.room&&W.room.title)||'イヤなことが あった日に 開く部屋'),
+    el('p',{class:'hint',style:'margin:0'},(W.room&&W.room.lead)||(D.pet+'と いっしょに 夢の中へ。モンスター（イヤな気持ち）に 5つの といで こたえると、気持ちが すこし整理されます。')));
+  s.append(intro);
+  const b=el('button',{class:'bossbtn',onclick:startBattle});
+  b.innerHTML=monSVG('#B49AE0')+'<span><b>夢の中へ（ボスせん）</b><small>'+CONFIG.xp.boss+'EXP。とちゅうで「にげる」も OK</small></span>';
+  s.append(b);
+  const c4=el('div',{class:'card'},el('h3',null,'たたかいの きろく'));
+  if(!D.battles.length) c4.append(el('p',{class:'hint',style:'margin:0'},'まだ ありません。'));
+  const ul=el('ul',{class:'loglist'});
+  D.battles.slice().reverse().slice(0,20).forEach(bt=>{
+    const d=new Date(bt.at), del=el('button',{class:'btn sm del'});
+    twoTap(del,'けす','もう1回で けす',()=>{ D.battles=D.battles.filter(x=>x!==bt); afterChange(0); renderQuest(); });
+    ul.append(el('li',null,el('div',{class:'top'},el('span',{class:'meta'},(d.getMonth()+1)+'/'+d.getDate()+' '+pad(d.getHours())+':'+pad(d.getMinutes())+'　'+bt.mon+'（'+bt.feel+'）'),del),
+      bt.memo?el('div',{class:'memo'},bt.memo):null,
+      el('div',{class:'meta',style:'margin-top:2px'},bt.ans.join(' → '))));
+  });
+  c4.append(ul); s.append(c4);
+}
+
+// ---------- ボス戦 ----------
+let B=null, typing=null;
+function say(text){
+  return new Promise(res=>{
+    const m=$('#msg'); m.textContent=''; let i=0;
+    clearInterval(typing);
+    const finish=()=>{ clearInterval(typing); typing=null; m.textContent=text; m.onclick=null; res(); };
+    if(matchMedia('(prefers-reduced-motion: reduce)').matches) return finish();
+    typing=setInterval(()=>{ i++; m.textContent=text.slice(0,i); if(i>=text.length) finish(); },28);
+    m.onclick=finish;
+  });
+}
+function cmds(list, grid, pre){
+  const c=$('#cmds'); c.innerHTML=''; c.className='cmds'+(grid?' grid':'');
+  if(pre) c.append(pre);
+  return new Promise(res=>{
+    list.forEach(x=>c.append(el('button',{class:'cmd',onclick:()=>{ c.innerHTML=''; res(x); }},typeof x==='string'?x:x.label)));
+    const f=c.querySelector('button'); if(f) f.focus({preventScroll:true});
+  });
+}
+function meBox(){ $('#bMe').innerHTML=`わたし Lv.${levelOf(totalXP())}<br>HP ${B.hp}/${B.maxHp}`; }
+function monHP(){ $('#mhp i').style.width=Math.max(0,B.mhp)+'%'; }
+async function startBattle(){
+  B={hp:6,maxHp:30,mhp:100,ans:[],memo:'',feel:'',mon:'',fled:false};
+  $('#battle').hidden=false; document.body.style.overflow='hidden';
+  $('#monster').className='monster'; $('#monster').innerHTML=''; $('#mname').textContent=''; $('#mhp').hidden=true;
+  meBox();
+  $('#bRun').onclick=flee; $('#bRun').hidden=false;
+  await say('つらすぎる ときは 右上の「にげる」で いつでも おわれます。\nふかい きずは ひとりで たたかわず、専門家や しんらいできる人と。');
+  await cmds(['わかった']);
+  if(B.fled) return;
+  await say('なにが あった？\n（かかなくても OK。この端末だけに のこります）');
+  const ta=el('textarea',{class:'bin',maxlength:'400','aria-label':'なにがあったか'});
+  const go=el('button',{class:'cmd'},'すすむ');
+  $('#cmds').innerHTML=''; $('#cmds').className='cmds'; $('#cmds').append(ta,go);
+  await new Promise(r=>go.onclick=r);
+  if(B.fled) return;
+  $('#cmds').innerHTML='';
+  B.memo=ta.value.trim().slice(0,400);
+  await say('いまの きもちに いちばん ちかいのは？');
+  const f=await cmds(CONFIG.feelings.map(x=>({label:x.label,v:x})),true);
+  if(B.fled) return;
+  B.feel=f.v.label; B.mon=f.v.mon;
+  $('#monster').innerHTML=monSVG(f.v.color); $('#mname').textContent=B.mon; $('#mhp').hidden=false; monHP();
+  await say(B.mon+' が あらわれた！');
+  await cmds(['▼']);
+  if(B.fled) return;
+  await say('わたしは すこし きずついている。\nまずは ホイミで じぶんを まもろう。');
+  await cmds(['ホイミ（しんこきゅう）']);
+  if(B.fled) return;
+  for(let i=1;i<=3;i++){
+    const ring=el('div',{class:'breath'});
+    $('#cmds').innerHTML=''; $('#cmds').append(ring);
+    await say(`すって… はいて…（${i}/3）\nわっかに あわせて ゆっくり`);
+    await cmds([i<3?'すった・はいた':'さいごの ひと呼吸'], false, ring);
+    if(B.fled) return;
+    B.hp=Math.min(B.maxHp,B.hp+8); meBox();
+  }
+  B.hp=B.maxHp; meBox();
+  await say('HPが かいふくした！\nさあ、たたかおう。');
+  const steps=CONFIG.bossSteps;
+  for(let si=0; si<steps.length; si++){
+    const st=steps[si];
+    await cmds(['たたかう']);
+    if(B.fled) return;
+    await say(st.q);
+    const a=await cmds(st.choices);
+    if(B.fled) return;
+    B.ans.push(a);
+    const last=si===steps.length-1, crit=a==='いま';
+    const dmg=last? B.mhp : Math.min(B.mhp-5, Math.round(100/steps.length*(crit?1.4:1)));
+    B.mhp-=dmg;
+    const m=$('#monster'); m.classList.add('flash','shake'); setTimeout(()=>m.classList.remove('flash','shake'),400);
+    const dn=el('div',{class:'dmg'},String(dmg)); $('#field').append(dn); setTimeout(()=>dn.remove(),950);
+    monHP();
+    const reply=CONFIG.bossReplies[a];
+    await say((reply?reply+'\n':'「'+a+'」を えらんだ！\n')+B.mon+'に '+dmg+'の ダメージ！');
+  }
+  $('#bRun').hidden=true;
+  $('#monster').classList.add('gone');
+  for(let i=0;i<5;i++){ const b=el('div',{class:'lightball',style:`left:${30+i*10}%;top:45%;animation-delay:${i*.15}s`}); $('#field').append(b); setTimeout(()=>b.remove(),2400); }
+  await say(B.mon+'は ひかりの つぶに なった！');
+  await cmds(['▼']);
+  D.battles.push({at:Date.now(), mon:B.mon, feel:B.feel, memo:B.memo, ans:B.ans}); save();
+  const before=levelOf(totalXP()-CONFIG.xp.boss), after=levelOf(totalXP());
+  await say('けいけんち '+CONFIG.xp.boss+'ポイント かくとく！'+(after>before?'\nレベルが '+after+'に あがった！':''));
+  await cmds(['▼']);
+  await say('けっかは どうでも いい。\nそれでも わたしは、じぶんの ために うごけた。');
+  await cmds(['▼']);
+  await say('さいごに えらんだ「'+B.ans[B.ans.length-1]+'」、\nできそうなら いま やってみよう。');
+  await cmds(['へやに もどる']);
+  endBattle(true);
+}
+function flee(){
+  if(!B || B.fled) return;
+  B.fled=true; clearInterval(typing); $('#msg').onclick=null;
+  $('#msg').textContent='うまく にげきった！\nにげるのも たいせつな せんりゃく。';
+  $('#cmds').innerHTML=''; $('#cmds').className='cmds';
+  const b=el('button',{class:'cmd',onclick:()=>endBattle(false)},'もどる'); $('#cmds').append(b); b.focus();
+}
+function endBattle(won){
+  $('#battle').hidden=true; document.body.style.overflow='';
+  B=null; afterChange(won?CONFIG.xp.boss:0); renderQuest();
+}
+
+// ---------- 画面：せってい ----------
+function renderSettings(){
+  const s=$('#tab-settings'); s.innerHTML='';
+  if(!D.setup) s.append(el('div',{class:'banner'},el('b',null,'育成メニューを 決めよう'),
+    el('p',{class:'hint',style:'margin:0 0 8px'},'下の「育成メニュー」で、じぶんを育てるために やりたいことを 足したり けしたり してね。ジャンル名・色も かえられます。あとから いつでも 変更OK。'),
+    el('button',{class:'btn primary',onclick:()=>{ D.setup=true; save(); showTab('today'); toast('いってらっしゃい！'); }},'これで はじめる')));
+
+  // 目標
+  const c0=el('div',{class:'card'},el('h3',null,'1日の もくひょう'));
+  const goal=el('select',{class:'in','aria-label':'1日の目標'});
+  [15,30,45,60,90,120,180,240].concat([D.goal]).filter((v,i,a)=>a.indexOf(v)===i).sort((a,b)=>a-b).forEach(v=>goal.append(el('option',{value:String(v),selected:v===D.goal?'':false},fmtMin(v))));
+  goal.onchange=()=>{ D.goal=+goal.value; save(); renderLCD(); };
+  const snd=el('button',{class:'btn sm'+(D.sound?' primary':''),style:'margin-top:10px','aria-pressed':String(D.sound),onclick:()=>{ D.sound=!D.sound; save(); if(D.sound) beep('small'); renderSettings(); }},D.sound?'♪ ごほうびの音 ON':'♪ ごほうびの音 OFF');
+  c0.append(goal, el('p',{class:'hint',style:'margin:8px 0 0'},'たっせいすると '+'キャラが ぴかぴかに なります。'), snd);
+  s.append(c0);
+
+  // おしらせ
+  const cn=el('div',{class:'card'},el('h3',null,'まいにちの おしらせ'));
+  const st=notifyState();
+  if(st==='unsupported'){
+    cn.append(el('p',{class:'hint',style:'margin:0'},'通知は、ネット上の置き場所（https）に置いて ホーム画面に追加すると使えます。いまの開き方では使えません。'));
+  } else {
+    const n=D.notify;
+    const tog=el('button',{class:'btn'+(n.on?' primary':''),'aria-pressed':String(n.on)},n.on?'おしらせ ON':'おしらせ OFF');
+    const time=el('input',{class:'in',type:'time',value:n.time,'aria-label':'おしらせの時刻',style:'width:auto'});
+    tog.onclick=async()=>{
+      if(!n.on){ const p=await askNotify(); if(p!=='granted'){ toast(p==='denied'?'スマホの設定で この サイトの通知を 許可してね':'通知が 許可されませんでした'); renderSettings(); return; } n.on=true; }
+      else n.on=false;
+      save(); scheduleRemind(); if(!n.on) closeNote('daily'); renderSettings();
+      if(n.on) showNote('おしらせ ON', '毎日 '+n.time+' に「きょうの問い」が とどきます', 'daily-test');
+    };
+    time.onchange=()=>{ n.time=time.value||'21:00'; n.last=''; save(); scheduleRemind(); };
+    cn.append(el('div',{class:'btnrow',style:'align-items:center'},tog,el('span',{class:'hint',style:'margin:0'},'時刻'),time),
+      el('p',{class:'hint',style:'margin:10px 0 0'},'この時刻に「きょうの問い」が 通知で とどきます。タイマー中は 通知バーに「そだて中」が 出ます。'+(st==='denied'?'（いまは スマホ側で 通知が止められています）':'')));
+  }
+  s.append(cn);
+
+  // 育成メニュー
+  const c2=el('div',{class:'card'},el('h3',null,'育成メニュー'),el('p',{class:'hint'},'名前を変えても、これまでの記録は のこります。'));
+  D.genres.forEach((g,gi)=>{
+    const box=el('div',{class:'gedit',style:'--g:'+hexOf(g.color)});
+    const nm=el('input',{class:'in',maxlength:'12',value:g.name,'aria-label':'ジャンル名'});
+    nm.oninput=()=>{ g.name=nm.value.trim()||'ジャンル'; save(); renderLCD(); };
+    const del=el('button',{class:'btn sm del'});
+    twoTap(del,'ジャンルをけす','もう1回で けす',()=>{ D.genres.splice(gi,1); save(); renderAll(); });
+    box.append(el('div',{class:'row'},nm,del));
+    const sw=el('div',{class:'swatches'});
+    PALETTE.forEach(p=>sw.append(el('button',{class:'sw',style:'background:'+p.hex,'aria-label':'色 '+p.id,'aria-pressed':String(g.color===p.id),onclick:()=>{ g.color=p.id; save(); renderAll(); }})));
+    box.append(sw);
+    g.items.forEach((it,ii)=>{
+      const inp=el('input',{class:'in',maxlength:'20',value:it.name,'aria-label':'メニュー名'});
+      inp.oninput=()=>{ it.name=inp.value.trim()||'メニュー'; save(); };
+      const d=el('button',{class:'btn sm del'});
+      twoTap(d,'けす','もう1回',()=>{ g.items.splice(ii,1); save(); renderAll(); });
+      box.append(el('div',{class:'row'},inp,d));
+    });
+    if(g.items.length<MAX_ITEMS){
+      const add=el('input',{class:'in',maxlength:'20',placeholder:'メニューを たす（例：ストレッチ）'});
+      const addB=el('button',{class:'btn sm',onclick:()=>{ const v=add.value.trim(); if(!v) return; g.items.push({id:uid(),name:v}); save(); renderAll(); }},'たす');
+      add.onkeydown=e=>{ if(e.key==='Enter') addB.click(); };
+      box.append(el('div',{class:'row'},add,addB));
+    }
+    c2.append(box);
+  });
+  if(D.genres.length<MAX_GENRES) c2.append(el('button',{class:'btn',onclick:()=>{
+    const used=D.genres.map(g=>g.color), c=(PALETTE.find(p=>!used.includes(p.id))||PALETTE[0]).id;
+    D.genres.push({id:uid(),name:'あたらしいジャンル',color:c,items:[]}); save(); renderAll();
+  }},'＋ ジャンルを ふやす'));
+  s.append(c2);
+
+  // なまえ
+  const c1=el('div',{class:'card'},el('h3',null,'なまえ'));
+  const pet=el('input',{class:'in',maxlength:'10',value:D.pet,'aria-label':'キャラのなまえ'});
+  pet.oninput=()=>{ D.pet=pet.value.trim()||'エゴちゃん'; save(); renderLCD(); };
+  const ttl=el('input',{class:'in',maxlength:'24',value:D.title,'aria-label':'ゲームのタイトル'});
+  ttl.oninput=()=>{ D.title=ttl.value.trim()||'エゴ育成ゲーム'; save(); renderLCD(); };
+  c1.append(el('label',{class:'f'},'キャラのなまえ'),pet,el('div',{style:'height:8px'}),el('label',{class:'f'},'ゲームのタイトル（本体の上に出ます）'),ttl);
+  s.append(c1);
+
+  // クエスト
+  const c3=el('div',{class:'card'},el('h3',null,'きょうの ちいさなこと（クエスト）'),el('p',{class:'hint'},'この中から 毎日'+CONFIG.questsPerDay+'つ、そだてる画面に 出ます。'));
+  D.questPool.forEach((q,qi)=>{
+    const inp=el('input',{class:'in',maxlength:'30',value:q,'aria-label':'クエスト'});
+    inp.onchange=()=>{ const v=inp.value.trim(); if(v){ D.questPool[qi]=v; save(); } };
+    const d=el('button',{class:'btn sm del'});
+    twoTap(d,'けす','もう1回',()=>{ D.questPool.splice(qi,1); save(); renderAll(); });
+    c3.append(el('div',{class:'row'},inp,d));
+  });
+  if(D.questPool.length<MAX_QUESTS){
+    const add=el('input',{class:'in',maxlength:'30',placeholder:'クエストを たす'});
+    const addB=el('button',{class:'btn sm',onclick:()=>{ const v=add.value.trim(); if(!v) return; D.questPool.push(v); save(); renderAll(); }},'たす');
+    add.onkeydown=e=>{ if(e.key==='Enter') addB.click(); };
+    c3.append(el('div',{class:'row'},add,addB));
+  }
+  s.append(c3);
+
+  // 共有
+  const c4=el('div',{class:'card'},el('h3',null,'クライエントさんに わたす'),
+    el('p',{class:'hint'},'いまの 育成メニュー・もくひょう・クエストだけを 入れたリンクを作ります。記録やメモは 入りません。受けとった人は じぶんの端末で じぶん用に そだてられます（メニューも じぶんで変えられます）。'));
+  const out=el('textarea',{class:'in',readonly:'',hidden:'','aria-label':'共有リンク'});
+  c4.append(el('button',{class:'btn primary',onclick:async()=>{
+    const url=location.href.split('#')[0]+'#setup='+b64e(JSON.stringify({t:D.title,m:D.goal,g:D.genres.map(g=>({n:g.name,c:g.color,i:g.items.map(i=>i.name)})),q:D.questPool}));
+    out.value=url; out.hidden=false;
+    try{ await navigator.clipboard.writeText(url); toast('リンクを コピーしました'); }catch(e){ out.select(); toast('下のリンクを コピーしてね'); }
+  }},'この設定の リンクを つくる'),el('div',{style:'height:8px'}),out);
+  s.append(c4);
+
+  // 引っ越し
+  const c5=el('div',{class:'card'},el('h3',null,'記録の ひっこし'),
+    el('p',{class:'hint'},'スマホを かえるときは、まず「書き出す」で ファイルを保存 → 新しいスマホで「読み込む」。'));
+  const dump=el('textarea',{class:'in',readonly:'',hidden:'','aria-label':'書き出したデータ'});
+  const file=el('input',{type:'file',accept:'.json,application/json',hidden:''});
+  const paste=el('textarea',{class:'in',hidden:'',placeholder:'書き出した文字を ここに はりつけ'});
+  const pasteB=el('button',{class:'btn',hidden:'',onclick:()=>askImport(paste.value)},'これを 読み込む');
+  c5.append(el('div',{class:'btnrow'},
+    el('button',{class:'btn primary',onclick:()=>{
+      const json=JSON.stringify({app:'ego-game',v:2,exportedAt:new Date().toISOString(),data:D});
+      try{ const a=el('a',{href:URL.createObjectURL(new Blob([json],{type:'application/json'})),download:'egogame-'+todayK().replace(/-/g,'')+'.json'});
+        document.body.append(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1500); }catch(e){}
+      dump.value=json; dump.hidden=false; toast('書き出しました');
+    }},'書き出す'),
+    el('button',{class:'btn',onclick:()=>file.click()},'ファイルから 読み込む'),
+    el('button',{class:'btn',onclick:()=>{ paste.hidden=!paste.hidden; pasteB.hidden=paste.hidden; }},'文字で 読み込む')));
+  c5.append(el('p',{class:'hint',style:'margin:8px 0 4px'},'ファイルが保存できないときは、書き出したあと下に出る文字を まるごとコピーして メモに保存してください。'),dump);
+  file.onchange=()=>{ const f=file.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>askImport(String(r.result)); r.readAsText(f); file.value=''; };
+  c5.append(file,paste,pasteB);
+  s.append(c5);
+
+  // リセット
+  const c6=el('div',{class:'card'},el('h3',null,'さいしょから'),el('p',{class:'hint'},'記録を ぜんぶ けして、たまごに もどします（育成メニューは のこります）。まえに「書き出す」しておくと 安心。'));
+  const rb=el('button',{class:'btn del'});
+  twoTap(rb,'記録を ぜんぶ けす','もう1回で ぜんぶ けす',()=>{ const keep={title:D.title,pet:D.pet,goal:D.goal,genres:D.genres,questPool:D.questPool}; D=Object.assign(defaults(),keep,{named:true,setup:true}); save(); lastLevel=1; renderAll(); toast('あたらしい たまごが きた'); });
+  c6.append(rb); s.append(c6);
+}
+function askImport(text){
+  let d=null; try{ d=normalize(JSON.parse(text)); }catch(e){}
+  if(!d){ toast('読み込めませんでした。書き出したファイルか確認してね'); return; }
+  const days=new Set(d.logs.map(l=>dk(new Date(l.at)))).size;
+  modal('この記録を 読み込む？', `<p>なまえ：${esc(d.pet)}<br>記録した日：${days}日／そうじかん：${fmtMin(d.logs.reduce((a,l)=>a+l.min,0))}</p><p class="hint">いま この端末にある記録は、読み込んだ記録に おきかわります。</p>`,
+    [{label:'やめる'},{label:'読み込む',primary:true,fn:()=>{ D=d; D.named=true; D.setup=true; save(); lastLevel=levelOf(totalXP()); renderAll(); toast('読み込みました'); }}]);
+}
+function b64e(s){ const bytes=new TextEncoder().encode(s); let bin=''; bytes.forEach(b=>bin+=String.fromCharCode(b)); return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
+function b64d(s){ s=s.replace(/-/g,'+').replace(/_/g,'/'); while(s.length%4) s+='='; const bin=atob(s); return new TextDecoder().decode(Uint8Array.from(bin,c=>c.charCodeAt(0))); }
+
+// ---------- タブ ----------
+let tab='today';
+function showTab(t){
+  tab=t;
+  ['today','quest','review','settings'].forEach(x=>$('#tab-'+x).hidden=x!==t);
+  document.querySelectorAll('.dev-btns button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.tab===t)));
+  renderTab();
+}
+function renderTab(){ ({today:renderToday,quest:renderQuest,review:renderReview,settings:renderSettings})[tab](); }
+function renderAll(){ renderLCD(); renderTab(); }
+document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
+
+let shownDay=todayK();
+setInterval(()=>{
+  if(todayK()!==shownDay){ if(viewDay===shownDay) viewDay=todayK(); shownDay=todayK(); renderAll(); }
+  else if(D.running) renderLCD();
+},60000);
+
+// ---------- 起動 ----------
+function askName(){
+  const inp=el('input',{class:'in',maxlength:'10',value:D.pet,'aria-label':'なまえ'});
+  const pic=el('div',{class:'evo'}); pic.innerHTML=petSVG(0,'normal');
+  const box=el('div',null,pic,el('p',null,'たまごを ひろった！ なまえを つけてね。'),inp,
+    el('p',{class:'hint',style:'margin-top:10px'},'じぶんを育てる時間を 記録すると、1分＝1EXP で すこしずつ そだちます。つぎに 育成メニューを 決めよう。'));
+  modal('ようこそ', box, [{label:'つぎへ',primary:true,fn:()=>{ D.pet=inp.value.trim()||'エゴちゃん'; D.named=true; save(); if(!D.setup) showTab('settings'); renderLCD(); }}]);
+}
+renderAll();
+(function boot(){
+  const m=location.hash.match(/^#setup=([A-Za-z0-9_-]+)/);
+  if(m){
+    history.replaceState(null,'',location.pathname+location.search);
+    let p=null; try{ p=JSON.parse(b64d(m[1])); }catch(e){}
+    if(p && Array.isArray(p.g)){
+      const list=p.g.slice(0,MAX_GENRES).map(g=>'<li>'+esc(str(g.n,12))+'：'+(Array.isArray(g.i)?g.i.slice(0,MAX_ITEMS).map(x=>esc(str(x,20))).join('、'):'')+'</li>').join('');
+      modal('この設定で はじめる？', `<p>「${esc(str(p.t,24)||'エゴ育成ゲーム')}」の 育成メニュー：</p><ul style="padding-left:1.2em;font-size:.9rem">${list}</ul><p class="hint">いまの記録は のこります。メニューは あとから じぶんで 変えられます。</p>`,
+        [{label:'やめる',fn:()=>{ if(!D.named) setTimeout(askName,50); }},{label:'この設定にする',primary:true,fn:()=>{
+          D.title=str(p.t,24)||D.title;
+          if(Number.isFinite(p.m)&&p.m>=5&&p.m<=MAX_MIN) D.goal=Math.round(p.m);
+          D.genres=p.g.slice(0,MAX_GENRES).map(g=>({id:uid(),name:str(g.n,12)||'ジャンル',color:PALETTE.some(x=>x.id===g.c)?g.c:'rose',items:(Array.isArray(g.i)?g.i:[]).slice(0,MAX_ITEMS).map(n=>({id:uid(),name:str(n,20)})).filter(i=>i.name)}));
+          if(Array.isArray(p.q)){ const q=p.q.map(x=>str(x,30)).filter(Boolean).slice(0,MAX_QUESTS); if(q.length) D.questPool=q; }
+          D.setup=true; save(); renderAll(); if(!D.named) setTimeout(askName,50);
+        }}]);
+      return;
+    }
+  }
+  if(!D.named) askName();
+})();
+
+// ---------- オフライン対応（https のサーバーに置いたときだけ動く） ----------
+if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
+  window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js').then(()=>{ scheduleRemind(); if(D.running) timerNotify(); }).catch(()=>{}); });
+}
+})();
+</script>
+</body>
+</html>
