@@ -29,7 +29,7 @@ body{margin:0;background:var(--bg);color:var(--ink);
   font-family:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Noto Sans JP",system-ui,sans-serif;
   line-height:1.6;-webkit-font-smoothing:antialiased;
   padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
-main{max-width:470px;margin:0 auto;padding:16px 16px 40px}
+main{max-width:470px;margin:0 auto;padding:16px 16px 40px;font-size:1.02rem}
 button,select{font-family:inherit;color:inherit}
 button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 [hidden]{display:none!important}
@@ -73,7 +73,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 .pop{position:absolute;bottom:70px;left:50%;width:16px;height:14px;pointer-events:none;animation:pop .9s ease-out forwards}
 .pop.xp{width:auto;height:auto;font-size:.72rem;white-space:nowrap}
 @keyframes pop{0%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,-48px)}}
-.meters{display:grid;grid-template-columns:1fr 1fr;gap:0 10px;margin-top:4px;font-size:.66rem;line-height:1.55}
+.meters{display:grid;grid-template-columns:1fr 1fr;gap:0 10px;margin-top:4px;font-size:.7rem;line-height:1.6}
 .meter{display:flex;justify-content:space-between;gap:4px;min-width:0}
 .meter span:first-child{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .meter span:last-child{flex:none}
@@ -87,16 +87,17 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 #nudge{margin:10px 0 6px;text-align:center}
 #nudge:empty{margin:0}
 .nudgebtn{border:none;background:var(--card);border-radius:999px;padding:8px 16px;font-size:.88rem;font-weight:700;cursor:pointer;box-shadow:0 2px 0 var(--line)}
-.door{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;border:1px dashed var(--line);background:transparent;border-radius:14px;padding:10px;font-size:.84rem;color:var(--sub);cursor:pointer;margin:4px 0 12px}
+.door{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;border:1px dashed var(--line);background:transparent;border-radius:14px;padding:12px;font-size:.95rem;color:var(--sub);cursor:pointer;margin:4px 0 12px}
 .door svg{width:26px;height:26px}
 .fold{padding:0;overflow:hidden}
-.fold>.fh{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;border:none;background:none;padding:13px 14px;font-size:.95rem;font-weight:700;cursor:pointer;text-align:left}
+.fold>.fh{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;border:none;background:none;padding:15px 16px;font-size:1.05rem;font-weight:700;cursor:pointer;text-align:left;list-style:none}
+.fold>.fh::-webkit-details-marker{display:none}
 .fold>.fh .sub{font-weight:500;color:var(--sub);font-size:.8rem;margin-left:auto;white-space:nowrap}
 .fold>.fh .chev{flex:none;width:10px;height:10px;border:solid var(--sub);border-width:0 2px 2px 0;transform:rotate(45deg);margin:0 4px 4px 6px;transition:transform .2s}
 .fold[open]>.fh .chev{transform:rotate(-135deg);margin-bottom:-2px}
 .fold>.fb{padding:0 14px 14px}
 .fold:not([open])>.fb{display:none}
-.vision{font-size:.82rem;color:var(--sub);text-align:center;margin:-4px 0 10px}
+.vision{font-size:.9rem;color:var(--sub);text-align:center;margin:-4px 0 10px}
 .vision b{color:var(--ink)}
 .cheer{font-size:.84rem;text-align:center;margin:8px 0 0;color:#9C4D6E}
 .mini{font-size:.8rem;color:var(--sub);text-align:center;margin:0 0 10px}
@@ -104,7 +105,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 /* ===== カード共通 ===== */
 .card{background:var(--card);border-radius:18px;padding:14px;margin-bottom:12px;box-shadow:0 2px 0 var(--line)}
 .card h3{margin:0 0 8px;font-size:.95rem}
-.hint{font-size:.78rem;color:var(--sub);margin:0 0 10px}
+.hint{font-size:.84rem;color:var(--sub);margin:0 0 10px;line-height:1.7}
 .datenav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .datenav div{text-align:center;line-height:1.25}
 .datenav b{font-size:1rem}.datenav small{display:block;color:var(--sub);font-size:.72rem}
@@ -113,8 +114,8 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 
 /* きょうの合計 */
 .total{text-align:center}
-.total .big{font-family:var(--pixel);font-size:2.3rem;line-height:1.1}
-.total .goal{font-size:.82rem;color:var(--sub)}
+.total .big{font-family:var(--pixel);font-size:3rem;line-height:1.1;margin:2px 0}
+.total .goal{font-size:.92rem;color:var(--sub)}
 .goalbar{height:14px;border-radius:999px;background:var(--line);overflow:hidden;margin:10px 0 6px}
 .goalbar i{display:block;height:100%;width:0;background:#F59BB0;border-radius:999px;transition:width .5s}
 .goalbar.done i{background:#E8B84A}
@@ -123,19 +124,19 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 
 /* タイマー */
 .items{display:grid;grid-template-columns:1fr 1fr;gap:7px}
-.item{display:flex;align-items:center;gap:8px;text-align:left;border:2px solid transparent;background:var(--bg);border-radius:12px;padding:9px 10px;font-size:.88rem;cursor:pointer;min-height:44px;line-height:1.3}
+.item{display:flex;align-items:center;gap:10px;text-align:left;border:2px solid transparent;background:var(--bg);border-radius:12px;padding:11px 12px;font-size:.98rem;cursor:pointer;min-height:44px;line-height:1.3}
 .item .box{flex:none;width:18px;height:18px;border:2px solid var(--g);border-radius:4px;display:grid;place-items:center}
 .item.on{border-color:var(--g)}
 .item.on .box{background:var(--g)}
 .item.on .box::after{content:"";width:5px;height:9px;border:solid #fff;border-width:0 2.5px 2.5px 0;transform:rotate(45deg) translate(-1px,-1px)}
 .chips-g{margin-bottom:8px}
-.chips-g small{display:block;font-size:.74rem;color:var(--sub);margin-bottom:3px}
+.chips-g small{display:block;font-size:.78rem;color:var(--sub);margin-bottom:4px}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
-.chip{border:2px solid color-mix(in srgb,var(--g) 55%,transparent);background:color-mix(in srgb,var(--g) 12%,var(--card));border-radius:999px;padding:7px 13px;font-size:.88rem;cursor:pointer;min-height:40px}
+.chip{border:2px solid color-mix(in srgb,var(--g) 55%,transparent);background:color-mix(in srgb,var(--g) 12%,var(--card));border-radius:999px;padding:9px 15px;font-size:.98rem;cursor:pointer;min-height:44px}
 .chip[aria-pressed="true"]{background:var(--g);border-color:var(--g);color:#fff;font-weight:700}
 .clock{font-family:var(--pixel);font-size:2.6rem;text-align:center;line-height:1.1;margin:6px 0 2px;font-variant-numeric:tabular-nums}
 .running-name{text-align:center;font-weight:700}
-.bigbtn{display:block;width:100%;border:none;border-radius:999px;padding:14px;font-size:1.05rem;font-weight:900;cursor:pointer;margin-top:10px;
+.bigbtn{display:block;width:100%;border:none;border-radius:999px;padding:16px;font-size:1.12rem;font-weight:900;cursor:pointer;margin-top:10px;
   background:linear-gradient(135deg,#F7C960,#E8A93C);color:#4A3214;box-shadow:0 4px 0 #C98F2C}
 .bigbtn.stop{background:linear-gradient(135deg,#F7A8BC,#E8829E);color:#fff;box-shadow:0 4px 0 #C4627E}
 .bigbtn:disabled{opacity:.45;cursor:default}
@@ -155,7 +156,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 .dq h3{margin:0 0 6px;font-size:.95rem;font-weight:400;color:#FFE08A}
 .dq p{margin:0 0 8px;font-size:.9rem}
 .dq .small{font-size:.74rem;color:#CFC8DA}
-.cmd{display:block;width:100%;text-align:left;background:none;border:none;color:#fff;font-family:var(--pixel);font-size:.95rem;padding:8px 6px 8px 26px;cursor:pointer;position:relative;border-radius:4px;line-height:1.45}
+.cmd{display:block;width:100%;text-align:left;background:none;border:none;color:#fff;font-family:var(--pixel);font-size:1.05rem;padding:10px 6px 10px 26px;cursor:pointer;position:relative;border-radius:4px;line-height:1.45}
 .cmd::before{content:"";position:absolute;left:8px;top:50%;margin-top:-6px;border:6px solid transparent;border-left:9px solid #fff;opacity:0}
 .cmd:hover::before,.cmd:focus-visible::before{opacity:1}
 .cmd:focus-visible{outline:none;background:rgba(255,255,255,.08)}
@@ -163,7 +164,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 .cmd.done::after{content:"CLEAR";position:absolute;right:6px;top:9px;font-size:.66rem;color:#FFE08A;text-decoration:none}
 .bossbtn{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:none;cursor:pointer;background:linear-gradient(135deg,#3B2A55,#6B4B8F);color:#fff;border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:0 4px 0 #2B1E40}
 .bossbtn svg{width:56px;height:56px;flex:none}
-.bossbtn b{display:block;font-size:1rem}.bossbtn small{font-size:.76rem;opacity:.85}
+.bossbtn b{display:block;font-size:1.1rem}.bossbtn small{font-size:.84rem;opacity:.85}
 
 /* ===== ふりかえり ===== */
 .bars{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;align-items:end;height:140px;margin:6px 0 4px}
@@ -186,7 +187,7 @@ label.f{display:block;font-size:.8rem;color:var(--sub);margin:0 0 4px}
 textarea.in{min-height:70px;font-size:.9rem;resize:vertical}
 .row{display:flex;gap:6px;align-items:center;margin-bottom:6px}
 .row .in{flex:1;min-width:0}
-.btn{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:9px 16px;font-size:.88rem;cursor:pointer;font-weight:700}
+.btn{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:10px 18px;font-size:.95rem;cursor:pointer;font-weight:700}
 .btn.primary{border:none;background:linear-gradient(135deg,#F7C960,#E8A93C);color:#4A3214;box-shadow:0 3px 0 #C98F2C}
 .btn.sm{padding:6px 12px;font-size:.78rem}
 .btn.del{color:var(--sub);font-weight:500}
@@ -201,8 +202,8 @@ textarea.in{min-height:70px;font-size:.9rem;resize:vertical}
 .card.toi{border-left:4px solid var(--gold)}
 .toihead{display:flex;justify-content:space-between;font-size:.78rem;color:var(--sub);margin-bottom:4px}
 .toinum{font-family:var(--pixel)}
-.toiq{margin:0 0 6px;font-size:1.05rem;font-weight:700;line-height:1.6}
-.toih{margin:0 0 10px;font-size:.82rem;color:var(--sub);background:var(--bg);border-radius:8px;padding:5px 9px}
+.toiq{margin:0 0 8px;font-size:1.12rem;font-weight:700;line-height:1.65}
+.toih{margin:0 0 10px;font-size:.9rem;color:var(--sub);background:var(--bg);border-radius:8px;padding:5px 9px}
 .toimark[aria-pressed="true"]{background:var(--gold);border-color:var(--gold);color:#4A3214}
 .note{font-size:.74rem;color:var(--sub);text-align:center;margin:18px 4px 0;line-height:1.7}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--dq);color:#fff;font-family:var(--pixel);font-size:.85rem;padding:8px 16px;border:2px solid #fff;border-radius:8px;z-index:60;max-width:90vw;text-align:center}
@@ -233,7 +234,7 @@ textarea.in{min-height:70px;font-size:.9rem;resize:vertical}
 .dmg{position:absolute;top:30%;font-size:1.4rem;color:#FFE08A;animation:pop .9s ease-out forwards;left:50%}
 .lightball{position:absolute;width:14px;height:14px;background:#FFE08A;border-radius:50%;box-shadow:0 0 18px 8px rgba(255,224,138,.6);animation:rise 1.6s ease-out forwards}
 @keyframes rise{0%{opacity:0;transform:translateY(20px)}30%{opacity:1}100%{opacity:0;transform:translateY(-90px)}}
-.msg{min-height:84px;font-size:.95rem;white-space:pre-wrap}
+.msg{min-height:84px;font-size:1.05rem;line-height:1.75;white-space:pre-wrap}
 .cmds.grid{display:grid;grid-template-columns:1fr 1fr}
 .breath{width:70px;height:70px;border-radius:50%;border:3px solid #FFE08A;margin:4px auto 8px;animation:breath 8s ease-in-out infinite}
 @keyframes breath{0%,100%{transform:scale(.6)}50%{transform:scale(1)}}
@@ -815,7 +816,7 @@ function renderToday(){
   // ゴール（最初に決めた「なりたい私」）
   if(isToday){
     const lastWk=dk(addDays(weekStart(new Date()),-7)); const wpick=(D.weekly[lastWk]&&D.weekly[lastWk].pick)||'';
-    s.append(el('p',{class:'vision'},D.vision?['ゴール：',el('b',null,D.vision)]:[],D.vision&&wpick?'　／　':'',wpick?'今週は「'+wpick+'」':''));
+    s.append(el('p',{class:'vision'},D.vision?['🎯 ',el('b',null,D.vision)]:[],D.vision&&wpick?'　':'',wpick?'（今週は '+wpick+'）':''));
     const sinceStart=Math.round((parseK(todayK())-parseK(D.start))/864e5);
     if(sinceStart<7 && !D.logs.length) s.append(el('p',{class:'mini'},WELCOME.meaning));
   }
@@ -824,10 +825,9 @@ function renderToday(){
   const logs=logsOn(viewDay), m=logs.reduce((a,l)=>a+l.min,0);
   const done=m>=D.goal;
   const tot=el('div',{class:'card total'},
-    el('div',{class:'goal'},isToday?'今日 育てた時間':'この日 育てた時間'),
     el('div',{class:'big',id:'dayTotal'},fmtMin(m)),
     el('div',{class:'goalbar'+(done?' done':'')},el('i',{style:'width:'+Math.min(100,m/D.goal*100)+'%'})),
-    el('div',{class:'goal'},done?'目標 '+fmtMin(D.goal)+' 達成。今日はもう十分。':'目標 '+fmtMin(D.goal)+' まで あと '+fmtMin(D.goal-m)));
+    el('div',{class:'goal'},done?'目標達成！ 今日はもう十分。':'あと '+fmtMin(D.goal-m)+' で目標（'+fmtMin(D.goal)+'）'));
   const gs=el('div',{class:'gsum',style:'margin-top:6px'});
   D.genres.forEach(g=>{ const mm=logs.filter(l=>l.g===g.id).reduce((a,l)=>a+l.min,0); if(mm) gs.append(el('span',null,el('i',{class:'dot',style:'background:'+hexOf(g.color)}),g.name+' '+fmtMin(mm))); });
   tot.append(gs);
@@ -836,22 +836,21 @@ function renderToday(){
     const tm=el('div',{style:'margin-top:14px;border-top:1px solid var(--line);padding-top:12px'});
     if(D.running){
       tm.append(el('div',{class:'running-name'},D.running.n+' を育て中'),el('div',{class:'clock',id:'clock'},'0:00:00'),
-        el('p',{class:'hint',style:'text-align:center;margin:0'},'ページを閉じても計り続けます'),
         el('button',{class:'bigbtn stop',onclick:stopTimer},'ストップして記録'));
     } else if(!hasItems){
       tm.append(el('p',{class:'hint'},'育成メニューがありません。「せってい」で作ってね。'));
     } else {
-      tm.append(el('p',{class:'hint',style:'text-align:left'},'何を育てる？ 選んでスタート'),menuChips(renderToday));
+      tm.append(menuChips(renderToday));
       const sel=selected && findItem(selected.g,selected.i);
       tm.append(el('button',{class:'bigbtn',disabled:sel?false:'',onclick:()=>{ if(!sel) return; D.running={at:Date.now(),g:sel.g.id,i:sel.it.id,n:sel.it.name}; save(); renderLCD(); renderToday(); timerNotify(); }},
-        sel?'成長ゲームスタート（'+sel.it.name+'）':'メニューを選んでね'));
+        sel?'成長ゲームスタート':'↑ ひとつ選んでね'));
     }
     tot.append(tm);
   }
   s.append(tot);
   if(isToday){
     const thisWk=dk(weekStart(new Date())), wd=(new Date().getDay()+6)%7;
-    if(wd===6 && !D.weekly[thisWk]) s.append(el('button',{class:'btn',style:'display:block;margin:0 auto 12px',onclick:()=>showTab('review')},'日曜日。今週のふりかえりを1問だけ →'));
+    if(wd===6 && !D.weekly[thisWk]) s.append(el('button',{class:'btn',style:'display:block;margin:0 auto 12px',onclick:()=>showTab('review')},'今週のふりかえり（1問）→'));
   }
 
   // ---- ここから下は「きょうのおまけ」。たたんである ----
@@ -863,7 +862,7 @@ function renderToday(){
       el('div',{class:'toihead'},el('span',null,'No.'+(toi.i+1)+(toi.deep?'　🕯️':''))),
       el('p',{class:'toiq'},toi.q),
       toi.h?el('p',{class:'toih'},toi.h):null);
-    const ta=el('textarea',{class:'in',maxlength:'400',placeholder:'気づいたことをひとこと（なくてもOK）','aria-label':'気づきメモ'},saved&&saved.text||'');
+    const ta=el('textarea',{class:'in',maxlength:'400',placeholder:'ひとこと（なくてもOK）','aria-label':'気づきメモ'},saved&&saved.text||'');
     const mark=el('button',{class:'btn sm toimark','aria-pressed':String(!!(saved&&saved.mark))},(saved&&saved.mark)?'★ ドキッとした':'☆ ドキッとした');
     mark.onclick=()=>{ const cur=D.toi[viewDay]||{i:toi.i,q:toi.q,text:'',mark:false}; cur.mark=!cur.mark; D.toi[viewDay]=cur; if(!cur.text&&!cur.mark) delete D.toi[viewDay]; save(); renderToday(); };
     const ok=el('button',{class:'btn primary sm',onclick:()=>{
@@ -873,7 +872,7 @@ function renderToday(){
       afterChange(t&&!had?CONFIG.xp.toi:0); if(t&&!had) beep('tiny'); toast(t?'書きとめたよ':'メモを消したよ'); renderToday();
     }},saved&&saved.text?'書きなおす':'書きとめる');
     body.append(ta,el('div',{class:'btnrow',style:'justify-content:space-between;align-items:center'},mark,ok));
-    s.append(fold('toi', isToday?'今日の問い':'この日の問い', saved&&saved.text?'✓ 書いた':(saved&&saved.mark?'★':'1分'), body, false));
+    s.append(fold('toi', isToday?'今日の問い':'この日の問い', saved&&saved.text?'✓':(saved&&saved.mark?'★':''), body, false));
   }
   // 今日のセルフハグ
   if(isToday){
@@ -889,17 +888,17 @@ function renderToday(){
           afterChange(gain); if(gain) beep('tiny'); renderToday();
         }},el('span',{class:'box'}),el('span',null,q)));
       });
-      s.append(fold('hug','今日のセルフハグ', done.length+'/'+qs.length, el('div',null,el('p',{class:'hint'},'自分を抱きしめる小さなこと。1つで '+CONFIG.xp.quest+'EXP。やらなくても大丈夫。'),box), false));
+      s.append(fold('hug','今日のセルフハグ', done.length+'/'+qs.length, box, false));
     }
   }
   // あとから記録
   if(hasItems){
     const minIn=el('input',{class:'in',type:'number',inputmode:'numeric',min:'1',max:String(MAX_MIN),placeholder:'分','aria-label':'分数'});
-    const memo=el('textarea',{class:'in',maxlength:'300',placeholder:'メモ（気づいたこと・やったこと／なくてもOK）','aria-label':'メモ'});
-    const body=el('div',null,el('p',{class:'hint'},'1. メニューを選ぶ'),menuChips(renderToday),
-      el('p',{class:'hint',style:'margin:10px 0 4px'},'2. 時間を入れる'),
+    const memo=el('textarea',{class:'in',maxlength:'300',placeholder:'メモ（なくてもOK）','aria-label':'メモ'});
+    const body=el('div',null,menuChips(renderToday),
+      el('p',{class:'hint',style:'margin:10px 0 4px'},'時間'),
       el('div',{class:'quick'},[15,30,60,120].map(n=>el('button',{onclick:()=>{ minIn.value=String((+minIn.value||0)+n); }},'+'+(n<60?n+'分':n/60+'時間')))),
-      minIn,el('p',{class:'hint',style:'margin:10px 0 4px'},'3. メモ'),memo,
+      minIn,el('p',{class:'hint',style:'margin:10px 0 4px'},'メモ'),memo,
       el('button',{class:'bigbtn',onclick:()=>{
         const sel=selected && findItem(selected.g,selected.i);
         const v=Math.round(+minIn.value);
@@ -909,7 +908,7 @@ function renderToday(){
         addLog(Math.max(at,parseK(viewDay).getTime()), v, sel.g, sel.it, memo.value);
         renderToday();
       }},'記録する'));
-    s.append(fold('manual','あとから記録','', body, !isToday));
+    s.append(fold('manual','あとから記録する','', body, !isToday));
   }
   // この日の記録
   const ul=el('ul',{class:'loglist'});
@@ -921,9 +920,9 @@ function renderToday(){
       el('div',{class:'meta'},pad(d.getHours())+':'+pad(d.getMinutes())+(genreById(l.g)?'　'+genreById(l.g).name:'')),
       l.memo?el('div',{class:'memo'},l.memo):null));
   });
-  s.append(fold('logs','この日の記録', logs.length?logs.length+'件':'', ul, false));
+  s.append(fold('logs','記録', logs.length?logs.length+'件':'', ul, false));
   // イヤな日の部屋（小さな扉）
-  const door=el('button',{class:'door',onclick:()=>showTab('quest')}); door.innerHTML=monSVG('#B49AE0')+'<span>イヤなことがあった日は、こちらの部屋へ →</span>'; s.append(door);
+  const door=el('button',{class:'door',onclick:()=>showTab('quest')}); door.innerHTML=monSVG('#B49AE0')+'<span>イヤなことがあった日 →</span>'; s.append(door);
   tick();
 }
 function stopTimer(){
@@ -931,7 +930,7 @@ function stopTimer(){
   const mins=Math.max(0,(Date.now()-r.at)/60000);
   const found=findItem(r.g,r.i);
   const minIn=el('input',{class:'in',type:'number',inputmode:'numeric',min:'1',max:String(MAX_MIN),value:String(Math.min(MAX_MIN,Math.round(mins))),'aria-label':'分数'});
-  const memo=el('textarea',{class:'in',maxlength:'300',placeholder:'メモ（きづいたこと・やったこと／なくてもOK）','aria-label':'メモ'});
+  const memo=el('textarea',{class:'in',maxlength:'300',placeholder:'メモ（なくてもOK）','aria-label':'メモ'});
   const discard=el('button',{class:'btn sm del',style:'margin-top:10px'});
   twoTap(discard,'記録しないでリセット','もう1回でリセット',()=>{ D.running=null; save(); $('#modal').hidden=true; renderLCD(); renderToday(); timerNotify(); });
   const body=el('div',null,
@@ -1132,16 +1131,18 @@ function renderReview(){
 function renderQuest(){
   const s=$('#tab-quest'); s.innerHTML='';
   const intro=el('div',{class:'card',style:'text-align:center'},
-    el('p',{style:'margin:0 0 6px;font-weight:700'},(W.room&&W.room.title)||'イヤなことが あった日に 開く部屋'),
+    el('p',{style:'margin:0 0 6px;font-weight:700;font-size:1.1rem'},(W.room&&W.room.title)||'イヤなことが あった日に 開く部屋'),
     el('p',{class:'hint',style:'margin:0'},(W.room&&W.room.lead)||(D.pet+'と いっしょに 夢の中へ。モンスター（イヤな気持ち）に 5つの といで こたえると、気持ちが すこし整理されます。')));
   const R=W.room||{};
-  if(R.sedonaUrl) intro.append(el('p',{style:'margin:8px 0 0;font-size:.84rem'},el('a',{href:R.sedonaUrl,target:'_blank',rel:'noopener',style:'color:#9C4D6E'},R.sedonaLabel||'セドナメソッドについて知りたい方はこちら →')));
-  if(R.dmUrl) intro.append(el('p',{style:'margin:6px 0 0;font-size:.84rem'},el('a',{href:R.dmUrl,target:'_blank',rel:'noopener',style:'color:#9C4D6E'},R.dmLabel||'一人で向き合うのがつらかったら、まりへDMしてね →')));
   s.append(intro);
-  s.append(el('button',{class:'btn sm',style:'display:block;margin:-4px auto 12px',onclick:()=>showTab('today')},'← きょうに戻る'));
   const b=el('button',{class:'bossbtn',onclick:startBattle});
-  b.innerHTML=monSVG('#B49AE0')+'<span><b>手放しの旅へ（ボスせん）</b><small>どんな感情？→認める？→手放す？→今何点？ '+CONFIG.xp.boss+'EXP。とちゅうで「にげる」もOK</small></span>';
+  b.innerHTML=monSVG('#B49AE0')+'<span><b>手放しの旅へ</b><small>いま何点？ から始まります</small></span>';
   s.append(b);
+  const links=el('div',{class:'btnrow',style:'justify-content:center;margin:0 0 14px'});
+  if(R.sedonaUrl) links.append(el('a',{class:'btn',href:R.sedonaUrl,target:'_blank',rel:'noopener',style:'text-decoration:none'},R.sedonaLabel||'セドナメソッドとは →'));
+  if(R.dmUrl) links.append(el('a',{class:'btn',href:R.dmUrl,target:'_blank',rel:'noopener',style:'text-decoration:none'},R.dmLabel||'まりにDM →'));
+  s.append(links);
+  s.append(el('button',{class:'btn sm',style:'display:block;margin:0 auto 14px',onclick:()=>showTab('today')},'← きょうに戻る'));
   const c4=el('div',{class:'card'},el('h3',null,'たたかいの記録'));
   if(!D.battles.length) c4.append(el('p',{class:'hint',style:'margin:0'},'まだ ありません。'));
   const ul=el('ul',{class:'loglist'});
@@ -1200,7 +1201,7 @@ async function startBattle(){
   await say((R.safety||'つらすぎる ときは 右上の「にげる」で いつでも おわれます。\n一人で 向き合うのが つらかったら、まりへ DMしてね。'));
   await cmds(['わかった']);
   if(B.fled) return;
-  await say('なにが あった？\n（かかなくても OK。この端末だけに のこります）');
+  await say('なにが あった？\n（かかなくても OK）');
   const ta=el('textarea',{class:'bin',maxlength:'400','aria-label':'なにがあったか'});
   const go=el('button',{class:'cmd'},'すすむ');
   $('#cmds').innerHTML=''; $('#cmds').className='cmds'; $('#cmds').append(ta,go);
@@ -1215,7 +1216,9 @@ async function startBattle(){
   B.feel=f.v.label; B.mon=f.v.mon; B.ans.push(f.v.label);
   $('#monster').innerHTML=monSVG(f.v.color); $('#mname').textContent=B.mon; $('#mhp').hidden=false;
   // 最初の点数
-  await say(B.mon+' が あらわれた！\n'+SD.score);
+  await say(B.mon+' が あらわれた！');
+  await cmds(['▼']); if(B.fled) return;
+  await say(SD.score);
   let score=await scorePick(); if(B.fled) return;
   B.scores.push(score); B.mhp=Math.max(5,score*10); monHP();
   // ホイミ（呼吸）
