@@ -1,6 +1,6 @@
 // エゴ育成ゲーム：電波がなくても開ける＋通知を出す仕組み（Service Worker）
 // 中身を更新したら CACHE の番号を1つ上げる
-const CACHE = 'ego-game-v11';
+const CACHE = 'ego-game-v13';
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './kotoba.js', './icon-192.png', './icon-512.png'];
 const CFG = 'ego-game-config';   // おしらせ設定の控え（ページが閉じていても読める場所）
 

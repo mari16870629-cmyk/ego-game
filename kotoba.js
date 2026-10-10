@@ -116,15 +116,15 @@ welcome: {
 },
 
 room: {
-  title: 'イヤなことが あった日に 開く部屋',
-  lead: '気持ちに点数をつけて、すこしずつ手放すゲーム。\nつらすぎる日は、開かなくていい。',
+  title: '嫌なことがあった日に開く部屋',
+  sub: '感情解放ができるセドナメソッド',
   // ボス戦のいちばん最初に出る言葉
   safety: 'つらくなったら 右上の「にげる」で おわれます。\nひとりが つらいときは、まりに DMしてね。',
   // リンク（部屋の説明の下に出ます）
   sedonaUrl: 'https://www.marihappy629.com/sedona-method-guide/',
   sedonaLabel: 'セドナメソッドとは →',
   dmUrl: 'https://lin.ee/WdbEffp',
-  dmLabel: 'つらいとき、まりにDM →',
+  dmLabel: 'つらい時はLINEで相談してね →',
   // セドナの問いと返し（直してOK）
   sedona: {
     ack:'その きもち、\nここに あっていい？',

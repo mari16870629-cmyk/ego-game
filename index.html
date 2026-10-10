@@ -265,9 +265,9 @@ textarea.in{min-height:70px;font-size:.9rem;resize:vertical}
       </div>
     </div>
     <div class="dev-btns">
-      <button data-tab="today" aria-pressed="true"><span class="knob"></span>きょう</button>
-      <button data-tab="review" aria-pressed="false"><span class="knob"></span>ふりかえり</button>
-      <button data-tab="settings" aria-pressed="false"><span class="knob"></span>せってい</button>
+      <button data-tab="today" aria-pressed="true"><span class="knob"></span>今日</button>
+      <button data-tab="review" aria-pressed="false"><span class="knob"></span>振り返り</button>
+      <button data-tab="settings" aria-pressed="false"><span class="knob"></span>設定</button>
     </div>
   </div>
   <div id="nudge"></div>
@@ -277,7 +277,7 @@ textarea.in{min-height:70px;font-size:.9rem;resize:vertical}
   <section id="tab-quest" hidden></section>
   <section id="tab-settings" hidden></section>
 
-  <p class="note">記録はこの端末（ブラウザ）の中だけに保存されます。<br>医療・カウンセリングの代わりではなく、自分磨きを楽しく続けるための記録ゲームです。<br>🕯️の問いは少し深め。つらければ飛ばしてOK。深い傷は専門家といっしょに。</p>
+  <p class="note">記録はこの端末（ブラウザ）の中だけに保存されます。<br>医療・カウンセリングの代わりではなく、自分磨きを楽しく続けるための記録ゲームです。</p>
 </main>
 
 <div class="modal" id="modal" hidden role="dialog" aria-modal="true" aria-labelledby="mTitle">
@@ -479,7 +479,7 @@ function normalize(o){
   if(Array.isArray(o.questPool)) d.questPool=o.questPool.map(q=>str(q,30)).filter(Boolean).slice(0,MAX_QUESTS);
   d.logs=Array.isArray(o.logs)?o.logs.filter(l=>l&&Number.isFinite(l.at)&&Number.isFinite(l.min)&&l.min>0).map(l=>({
     id:str(l.id,20)||uid(), at:l.at, min:Math.min(MAX_MIN,Math.round(l.min)), g:str(l.g,20), i:str(l.i,20), n:str(l.n,20)||'メニュー', memo:str(l.memo,300)})):[];
-  if(o.running && Number.isFinite(o.running.at)) d.running={at:o.running.at, g:str(o.running.g,20), i:str(o.running.i,20), n:str(o.running.n,20)};
+  if(o.running && Number.isFinite(o.running.at)) d.running={at:o.running.at, g:str(o.running.g,20), i:str(o.running.i,20), n:str(o.running.n,20), paused:Number.isFinite(o.running.paused)?o.running.paused:null, pausedTotal:Number.isFinite(o.running.pausedTotal)?o.running.pausedTotal:0};
   const okK=k=>/^\d{4}-\d{2}-\d{2}$/.test(k);
   d.quests={};
   if(o.quests && typeof o.quests==='object') for(const k in o.quests){ const v=o.quests[k]; if(okK(k)&&Array.isArray(v)){ const a=v.map(q=>str(q,30)).filter(Boolean); if(a.length) d.quests[k]=a; } }
@@ -513,7 +513,7 @@ function totalXP(){
 const stageOf = xp => STAGES.reduce((a,s,i)=>xp>=s.at?i:a,0);
 function idleDays(){ let d=addDays(new Date(),-1), n=0; while(n<30 && !anyOn(dk(d))){ n++; d=addDays(d,-1); } return n; }
 function mood(){
-  if(D.running) return 'work';
+  if(D.running && !D.running.paused) return 'work';
   const k=todayK(), m=dayMin(k);
   if(m>=D.goal) return 'happy';
   if(!m && !dayQuests(k) && !battlesOn(k) && !(D.toi[k]&&D.toi[k].text)){
@@ -835,8 +835,11 @@ function renderToday(){
   if(isToday){
     const tm=el('div',{style:'margin-top:14px;border-top:1px solid var(--line);padding-top:12px'});
     if(D.running){
-      tm.append(el('div',{class:'running-name'},D.running.n+' を育て中'),el('div',{class:'clock',id:'clock'},'0:00:00'),
-        el('button',{class:'bigbtn stop',onclick:stopTimer},'ストップして記録'));
+      const paused=!!D.running.paused;
+      tm.append(el('div',{class:'running-name'},D.running.n+'で育て中'+(paused?'（一時停止）':'')),el('div',{class:'clock',id:'clock',style:paused?'opacity:.5':''},'0:00:00'),
+        el('div',{style:'display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px'},
+          el('button',{class:'bigbtn',style:'margin:0;background:var(--card);color:var(--ink);border:2px solid var(--line);box-shadow:none',onclick:pauseTimer},paused?'▶ 再開':'❚❚ 一時停止'),
+          el('button',{class:'bigbtn stop',style:'margin:0',onclick:stopTimer},'■ ストップして記録')));
     } else if(!hasItems){
       tm.append(el('p',{class:'hint'},'育成メニューがありません。「せってい」で作ってね。'));
     } else {
@@ -927,7 +930,7 @@ function renderToday(){
 }
 function stopTimer(){
   const r=D.running; if(!r) return;
-  const mins=Math.max(0,(Date.now()-r.at)/60000);
+  const mins=elapsedMs()/60000;
   const found=findItem(r.g,r.i);
   const minIn=el('input',{class:'in',type:'number',inputmode:'numeric',min:'1',max:String(MAX_MIN),value:String(Math.min(MAX_MIN,Math.round(mins))),'aria-label':'分数'});
   const memo=el('textarea',{class:'in',maxlength:'300',placeholder:'メモ（なくてもOK）','aria-label':'メモ'});
@@ -947,11 +950,13 @@ function stopTimer(){
     renderToday();
   }}]);
 }
+function elapsedMs(){ const r=D.running; if(!r) return 0; return Math.max(0, Date.now()-r.at-(r.pausedTotal||0)-(r.paused?Date.now()-r.paused:0)); }
 function tick(){
   const c=$('#clock'); if(!c || !D.running) return;
-  const s=Math.max(0,Math.floor((Date.now()-D.running.at)/1000));
+  const s=Math.floor(elapsedMs()/1000);
   c.textContent=Math.floor(s/3600)+':'+pad(Math.floor(s%3600/60))+':'+pad(s%60);
 }
+function pauseTimer(){ const r=D.running; if(!r) return; if(r.paused){ r.pausedTotal=(r.pausedTotal||0)+(Date.now()-r.paused); r.paused=null; } else r.paused=Date.now(); save(); renderLCD(); renderToday(); timerNotify(); }
 setInterval(tick,1000);
 
 // ---------- おしらせ（通知）----------
@@ -972,8 +977,8 @@ async function closeNote(tag){ const reg=await swReg(); if(!reg) return; try{ (a
 // タイマー中の通知（#3）
 async function timerNotify(){
   if(!D.running){ closeNote('timer'); return; }
-  const d=new Date(D.running.at), m=Math.floor((Date.now()-D.running.at)/60000);
-  await showNote(D.running.n+' を そだて中', (m?m+'分 ':'')+'（'+pad(d.getHours())+':'+pad(d.getMinutes())+'〜）タップして ストップ', 'timer', {silent:true, requireInteraction:true, data:{open:'today'}});
+  const d=new Date(D.running.at), m=Math.floor(elapsedMs()/60000);
+  await showNote(D.running.n+'で育て中'+(D.running.paused?'（一時停止）':''), (m?m+'分 ':'')+'（'+pad(d.getHours())+':'+pad(d.getMinutes())+'〜）タップして ストップ', 'timer', {silent:true, requireInteraction:true, data:{open:'today'}});
 }
 setInterval(()=>{ if(D.running && canNotify() && Notification.permission==='granted') timerNotify(); }, 60000);
 // 毎日のおしらせ（#2）：設定時刻を過ぎていて、きょうまだ出していなければ出す
@@ -1130,19 +1135,19 @@ function renderReview(){
 // ---------- 画面：イヤな日（べつの部屋） ----------
 function renderQuest(){
   const s=$('#tab-quest'); s.innerHTML='';
-  const intro=el('div',{class:'card',style:'text-align:center'},
-    el('p',{style:'margin:0 0 6px;font-weight:700;font-size:1.1rem'},(W.room&&W.room.title)||'イヤなことが あった日に 開く部屋'),
-    el('p',{class:'hint',style:'margin:0'},(W.room&&W.room.lead)||(D.pet+'と いっしょに 夢の中へ。モンスター（イヤな気持ち）に 5つの といで こたえると、気持ちが すこし整理されます。')));
   const R=W.room||{};
+  const intro=el('div',{class:'card',style:'text-align:center'},
+    el('p',{style:'margin:0;font-weight:700;font-size:1.1rem'},R.title||'嫌なことがあった日に開く部屋'),
+    el('p',{style:'margin:2px 0 0;font-size:.95rem;color:var(--sub)'},R.sub||'感情解放ができるセドナメソッド'));
   s.append(intro);
+  const links=el('div',{class:'btnrow',style:'justify-content:center;margin:-4px 0 12px'});
+  if(R.sedonaUrl) links.append(el('a',{class:'btn',href:R.sedonaUrl,target:'_blank',rel:'noopener',style:'text-decoration:none'},R.sedonaLabel||'セドナメソッドとは →'));
+  if(R.dmUrl) links.append(el('a',{class:'btn',href:R.dmUrl,target:'_blank',rel:'noopener',style:'text-decoration:none'},R.dmLabel||'つらい時はLINEで相談してね →'));
+  s.append(links);
   const b=el('button',{class:'bossbtn',onclick:startBattle});
   b.innerHTML=monSVG('#B49AE0')+'<span><b>手放しの旅へ</b><small>いま何点？ から始まります</small></span>';
   s.append(b);
-  const links=el('div',{class:'btnrow',style:'justify-content:center;margin:0 0 14px'});
-  if(R.sedonaUrl) links.append(el('a',{class:'btn',href:R.sedonaUrl,target:'_blank',rel:'noopener',style:'text-decoration:none'},R.sedonaLabel||'セドナメソッドとは →'));
-  if(R.dmUrl) links.append(el('a',{class:'btn',href:R.dmUrl,target:'_blank',rel:'noopener',style:'text-decoration:none'},R.dmLabel||'まりにDM →'));
-  s.append(links);
-  s.append(el('button',{class:'btn sm',style:'display:block;margin:0 auto 14px',onclick:()=>showTab('today')},'← きょうに戻る'));
+  s.append(el('button',{class:'btn sm',style:'display:block;margin:0 auto 14px',onclick:()=>showTab('today')},'← 今日に戻る'));
   const c4=el('div',{class:'card'},el('h3',null,'たたかいの記録'));
   if(!D.battles.length) c4.append(el('p',{class:'hint',style:'margin:0'},'まだ ありません。'));
   const ul=el('ul',{class:'loglist'});
