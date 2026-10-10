@@ -23,7 +23,7 @@
   :root:not([data-theme="light"]){ --bg:#2A2433; --card:#372F42; --ink:#F4EAF2; --sub:#BCAFC6; --line:#4A4057; }
 }
 :root[data-theme="dark"]{ --bg:#2A2433; --card:#372F42; --ink:#F4EAF2; --sub:#BCAFC6; --line:#4A4057; }
-@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) .card.toi{background:#443A2E;border-color:#8A7140} }
+
 *,*::before,*::after{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);
   font-family:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Noto Sans JP",system-ui,sans-serif;
@@ -54,6 +54,8 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 .pet.sleep{animation:breathe 2.4s steps(2) infinite}
 .pet.jump{animation:jump .5s steps(3) 2}
 .pet.grump{animation:grump 1.6s steps(2) infinite}
+.pet.peek{animation:peek .6s steps(2) 1}
+@keyframes peek{50%{transform:translateX(4px)}}
 @keyframes grump{50%{transform:translateX(-3px) rotate(-4deg)}}
 .typelabel{position:absolute;left:0;bottom:2px;font-size:.6rem;background:rgba(255,255,255,.7);border-radius:4px;padding:0 5px;max-width:48%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @keyframes hop{50%{transform:translateY(-6px)}}
@@ -82,7 +84,22 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 .dev-btns button{border:none;background:none;padding:0;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;font-size:.68rem;color:#8E4565;font-weight:700}
 .dev-btns .knob{width:38px;height:38px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#FFF6D8,#F3C55A 70%);box-shadow:0 4px 0 #C99A33,inset 0 -2px 0 rgba(0,0,0,.08)}
 .dev-btns button[aria-pressed="true"] .knob{transform:translateY(3px);box-shadow:0 1px 0 #C99A33}
-.gear{display:block;margin:10px auto 16px;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 16px;font-size:.8rem;color:var(--sub);cursor:pointer}
+#nudge{margin:10px 0 6px;text-align:center}
+#nudge:empty{margin:0}
+.nudgebtn{border:none;background:var(--card);border-radius:999px;padding:8px 16px;font-size:.88rem;font-weight:700;cursor:pointer;box-shadow:0 2px 0 var(--line)}
+.door{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;border:1px dashed var(--line);background:transparent;border-radius:14px;padding:10px;font-size:.84rem;color:var(--sub);cursor:pointer;margin:4px 0 12px}
+.door svg{width:26px;height:26px}
+.fold{padding:0;overflow:hidden}
+.fold>.fh{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;border:none;background:none;padding:13px 14px;font-size:.95rem;font-weight:700;cursor:pointer;text-align:left}
+.fold>.fh .sub{font-weight:500;color:var(--sub);font-size:.8rem;margin-left:auto;white-space:nowrap}
+.fold>.fh .chev{flex:none;width:10px;height:10px;border:solid var(--sub);border-width:0 2px 2px 0;transform:rotate(45deg);margin:0 4px 4px 6px;transition:transform .2s}
+.fold[open]>.fh .chev{transform:rotate(-135deg);margin-bottom:-2px}
+.fold>.fb{padding:0 14px 14px}
+.fold:not([open])>.fb{display:none}
+.vision{font-size:.82rem;color:var(--sub);text-align:center;margin:-4px 0 10px}
+.vision b{color:var(--ink)}
+.cheer{font-size:.84rem;text-align:center;margin:8px 0 0;color:#9C4D6E}
+.mini{font-size:.8rem;color:var(--sub);text-align:center;margin:0 0 10px}
 
 /* ===== カード共通 ===== */
 .card{background:var(--card);border-radius:18px;padding:14px;margin-bottom:12px;box-shadow:0 2px 0 var(--line)}
@@ -99,7 +116,8 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 .total .big{font-family:var(--pixel);font-size:2.3rem;line-height:1.1}
 .total .goal{font-size:.82rem;color:var(--sub)}
 .goalbar{height:14px;border-radius:999px;background:var(--line);overflow:hidden;margin:10px 0 6px}
-.goalbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#F7C960,#F59BB0);border-radius:999px;transition:width .5s}
+.goalbar i{display:block;height:100%;width:0;background:#F59BB0;border-radius:999px;transition:width .5s}
+.goalbar.done i{background:#E8B84A}
 .gsum{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 12px;font-size:.78rem;color:var(--sub)}
 .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px;vertical-align:0}
 
@@ -178,13 +196,13 @@ textarea.in{min-height:70px;font-size:.9rem;resize:vertical}
 .sw[aria-pressed="true"]{border-color:var(--ink)}
 .gedit{border:2px solid color-mix(in srgb,var(--g) 50%,transparent);border-radius:14px;padding:10px;margin-bottom:10px}
 .btnrow{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
-.banner{background:linear-gradient(135deg,#FFF0C9,#FFE0EA);border-radius:18px;padding:14px;margin-bottom:12px}
+.banner{background:var(--card);border-left:4px solid #F59BB0;border-radius:18px;padding:14px;margin-bottom:12px}
 .banner b{display:block;margin-bottom:4px}
-.card.toi{background:linear-gradient(135deg,#FFF7E0,#FFF0F4);border:2px solid #F3DCA0}
+.card.toi{border-left:4px solid var(--gold)}
 .toihead{display:flex;justify-content:space-between;font-size:.78rem;color:var(--sub);margin-bottom:4px}
 .toinum{font-family:var(--pixel)}
 .toiq{margin:0 0 6px;font-size:1.05rem;font-weight:700;line-height:1.6}
-.toih{margin:0 0 10px;font-size:.82rem;color:var(--sub);background:rgba(255,255,255,.55);border-radius:8px;padding:5px 9px}
+.toih{margin:0 0 10px;font-size:.82rem;color:var(--sub);background:var(--bg);border-radius:8px;padding:5px 9px}
 .toimark[aria-pressed="true"]{background:var(--gold);border-color:var(--gold);color:#4A3214}
 .note{font-size:.74rem;color:var(--sub);text-align:center;margin:18px 4px 0;line-height:1.7}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--dq);color:#fff;font-family:var(--pixel);font-size:.85rem;padding:8px 16px;border:2px solid #fff;border-radius:8px;z-index:60;max-width:90vw;text-align:center}
@@ -243,19 +261,19 @@ textarea.in{min-height:70px;font-size:.9rem;resize:vertical}
       </div>
     </div>
     <div class="dev-btns">
-      <button data-tab="today" aria-pressed="true"><span class="knob"></span>そだてる</button>
+      <button data-tab="today" aria-pressed="true"><span class="knob"></span>きょう</button>
       <button data-tab="review" aria-pressed="false"><span class="knob"></span>ふりかえり</button>
-      <button data-tab="quest" aria-pressed="false"><span class="knob"></span>イヤな日</button>
+      <button data-tab="settings" aria-pressed="false"><span class="knob"></span>せってい</button>
     </div>
   </div>
-  <button class="gear" data-tab="settings">せってい（育成メニュー・目標・引っ越し）</button>
+  <div id="nudge"></div>
 
   <section id="tab-today"></section>
   <section id="tab-review" hidden></section>
   <section id="tab-quest" hidden></section>
   <section id="tab-settings" hidden></section>
 
-  <p class="note">記録はこの端末（ブラウザ）の中だけに保存されます。<br>医療・カウンセリングの代わりではなく、自分磨きを楽しく続けるための記録ゲームです。<br>🕯️の問いは すこし深め。つらければ とばしてOK。深い傷は 専門家と いっしょに。</p>
+  <p class="note">記録はこの端末（ブラウザ）の中だけに保存されます。<br>医療・カウンセリングの代わりではなく、自分磨きを楽しく続けるための記録ゲームです。<br>🕯️の問いは少し深め。つらければ飛ばしてOK。深い傷は専門家といっしょに。</p>
 </main>
 
 <div class="modal" id="modal" hidden role="dialog" aria-modal="true" aria-labelledby="mTitle">
@@ -356,11 +374,15 @@ function petSVG(si, mood, type){
       if(mood==='happy'){ set(r,c-1,ink); set(r-1,c,ink); set(r,c+1,ink); }
       else if(mood==='sleepy'){ set(r,i?c:c-1,ink); set(r,i?c+1:c,ink); }
       else if(mood==='grumpy'){ set(r,c,ink); set(r-1,i?c+1:c-1,ink); set(r-2,i?c+2:c-2,ink); }
+      else if(mood==='blink'){ set(r,c-1,ink); set(r,c,ink); set(r,c+1,ink); }
+      else if(mood==='wink'){ if(i){ set(r,c-1,ink); set(r,c,ink); set(r,c+1,ink); } else { set(r,c,ink); set(r-1,c,ink); } }
+      else if(mood==='look'){ set(r,c+1,ink); set(r-1,c+1,ink); }
       else { set(r,c,ink); set(r-1,c,ink); }
     });
     f.cheeks.forEach(([r,c],i)=>{ set(r,c,mood==='grumpy'?'#FF8A9A':'#FF9FB5'); if(mood==='grumpy') set(r,i?c-1:c+1,'#FF8A9A'); });
     const [mr,mc]=f.mouth;
     if(mood==='happy'){ [mc-1,mc,mc+1,mc+2].forEach(c=>set(mr-1,c,ink)); set(mr,mc,'#FF8A7A'); set(mr,mc+1,'#FF8A7A'); }
+    else if(mood==='smile'||mood==='wink'){ set(mr-1,mc-1,ink); set(mr,mc,ink); set(mr,mc+1,ink); set(mr-1,mc+2,ink); set(mr,mc-1,'#FF9FB5'); }
     else if(mood==='sleepy'){ set(mr,mc,ink); set(mr,mc+1,ink); }
     else if(mood==='grumpy'){ set(mr,mc-1,ink); set(mr-1,mc,ink); set(mr-1,mc+1,ink); set(mr,mc+2,ink); }
     else { set(mr-1,mc-1,ink); set(mr,mc,ink); set(mr,mc+1,ink); set(mr-1,mc+2,ink); }
@@ -426,7 +448,7 @@ const uid = () => Math.random().toString(36).slice(2,9);
 const str = (v,max) => typeof v==='string' ? v.trim().slice(0,max) : '';
 const esc = s => String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function defaults(){
-  return { v:2, title:'エゴ育成ゲーム', pet:'エゴちゃん', named:false, setup:false, start:todayK(), seen:0, goal:CONFIG.goal, sound:true, typesSeen:[], weekly:{}, notify:{on:false, time:'21:00', last:''},
+  return { v:2, title:'エゴ育成ゲーム', pet:'エゴちゃん', named:false, setup:false, start:todayK(), seen:0, goal:CONFIG.goal, vision:'', sound:true, typesSeen:[], ui:{}, weekly:{}, notify:{on:false, time:'21:00', last:''},
     genres: CONFIG.genres.map(g=>({id:uid(), name:g.name, color:g.color, items:g.items.map(n=>({id:uid(), name:n}))})),
     questPool: CONFIG.quests.slice(), logs:[], running:null, quests:{}, battles:[], toi:{} };
 }
@@ -440,6 +462,8 @@ function normalize(o){
   d.seen=Number.isInteger(o.seen)?o.seen:0;
   d.goal=Number.isFinite(o.goal)&&o.goal>=5&&o.goal<=MAX_MIN?Math.round(o.goal):d.goal;
   d.sound=o.sound!==false;
+  d.vision=str(o.vision,30);
+  d.ui=(o.ui&&typeof o.ui==='object')?Object.fromEntries(Object.entries(o.ui).filter(([a,b])=>typeof a==='string'&&typeof b==='boolean').slice(0,20)):{};
   d.typesSeen=Array.isArray(o.typesSeen)?o.typesSeen.map(x=>str(x,20)).filter(Boolean).slice(0,60):[];
   d.weekly={};
   if(o.weekly&&typeof o.weekly==='object') for(const k in o.weekly){ const v=o.weekly[k]; if(okK(k)&&v&&typeof v==='object'){ d.weekly[k]={pick:str(v.pick,20), memo:str(v.memo,300)}; } }
@@ -550,7 +574,7 @@ function features(){
   return {active,ratio:active/days,avgMin,goalHit,topShare,topName,balance,memoRate,toiRate,marks,boss,morning,night,wk,sessionAvg,quests,streak,cv,weeklyPicks,allActive,sinceStart,idle,recent2,gapBefore,logs:logs.length};
 }
 const TYPE_RULES = {
-  orusuban:  f=>f.idle>=3,
+  orusuban:  f=>f.idle>=3 && f.allActive>=3,
   hajimemashite: f=>f.active<3 && f.allActive<5,
   haru:      f=>f.sinceStart<7 && f.active>=3,
   fukkatsu:  f=>f.recent2 && f.gapBefore>=3,
@@ -656,7 +680,7 @@ function celebrate(big){
     const sp=el('div',{class:'confetti',style:`left:${10+Math.random()*80}%;top:${10+Math.random()*50}%;background:${['#F59BB0','#F7C960','#86B7E6','#7CCAA2','#B59AE6'][i%5]};animation-delay:${(i*0.06).toFixed(2)}s`});
     area.append(sp); setTimeout(()=>sp.remove(),1300);
   }
-  const set=LINES.reward; $('#bubble').textContent=set[Math.floor(Math.random()*set.length)];
+  $('#bubble').textContent=pick(LINES.reward);
   beep(big?'big':'small');
   setTimeout(()=>{ pet.classList.remove('jump'); renderLCD(); },1400);
 }
@@ -669,12 +693,37 @@ function popXP(n){
 }
 
 // ---------- 画面：LCD ----------
-const LINES = Object.assign({egg:['…ことこと'],sleepy:['…むにゃ'],normal:['いいかんじ！'],happy:['もくひょう たっせい！'],work:['いっしょに そだってる…'],reward:['やったね！'],grumpy:['…ぷい'],grumpy2:['…もう しらない']}, W.lines||{});
+const LINES = Object.assign({egg:['…ことこと'],sleepy:['…むにゃ'],normal:['いいかんじ！'],happy:['もくひょう たっせい！'],work:['いっしょに そだってる…'],reward:['やったね！'],grumpy:['…ぷい'],grumpy2:['…もう しらない'],cheer:['「{goal}」へ、きょうも 一歩。'],cheerIdle:['「{goal}」、おぼえてるよ']}, W.lines||{});
+const WELCOME = Object.assign({meaning:'この子は、未来の私。かけた時間のぶんだけ、育ちます。',goalAsk:'どんな私に なりたい？',goalEx:'',goalDefault:'自分を大切にできる私'}, W.welcome||{});
+function fill(t, min){ return String(t).replace(/\{goal\}/g, D.vision||WELCOME.goalDefault).replace(/\{name\}/g, D.pet).replace(/\{min\}/g, String(min||0)); }
+const pick = arr => arr[Math.floor(Math.random()*arr.length)];
 let lineIdx=0;
 function speak(force){
-  const si=stageOf(totalXP()), m=mood(), set=si===0&&m!=='work'?LINES.egg:(m==='grumpy'&&idleDays()>=3?LINES.grumpy2:LINES[m]);
+  const si=stageOf(totalXP()), m=mood();
+  let set=si===0&&m!=='work'?LINES.egg:(m==='grumpy'&&idleDays()>=3?LINES.grumpy2:LINES[m]);
+  if(D.vision && (m==='normal'||m==='happy') && Math.random()<0.3) set=LINES.cheerIdle;
   if(force) lineIdx++;
-  $('#bubble').textContent=set[lineIdx%set.length];
+  $('#bubble').textContent=fill(set[lineIdx%set.length]);
+}
+// 表情が ちょこちょこ変わる（まばたき・ウインク・にっこり・よそ見）
+let faceT=null;
+function liveFace(){
+  clearTimeout(faceT);
+  faceT=setTimeout(()=>{
+    const pet=$('#pet'); const si=stageOf(totalXP()), m=mood();
+    if(si>0 && !document.hidden && $('#modal').hidden && $('#battle').hidden){
+      const base=m==='work'?'happy':m;
+      const r=Math.random();
+      const v = r<0.5?'blink' : r<0.65?'wink' : r<0.8?'smile' : r<0.9?'look' : null;
+      if(v && base!=='grumpy' || v==='blink'){
+        pet.innerHTML=petSVG(si, v==='smile'&&base==='happy'?'happy':v);
+        if(v==='look'){ pet.classList.add('peek'); setTimeout(()=>pet.classList.remove('peek'),700); }
+        setTimeout(()=>{ if($('#pet')) $('#pet').innerHTML=petSVG(si, base); }, v==='blink'?160:v==='look'?700:900);
+      }
+      if(Math.random()<0.25) speak(true);
+    }
+    liveFace();
+  }, 2500+Math.random()*4500);
 }
 function renderLCD(){
   const xp=totalXP(), si=stageOf(xp), st=STAGES[si], m=mood(), k=todayK();
@@ -685,7 +734,22 @@ function renderLCD(){
   pet.innerHTML=petSVG(si,m==='work'?'happy':m);
   pet.setAttribute('aria-label',D.pet+'（'+st.name+'）');
   pet.className='pet '+(m==='work'?'work':si===0?'wobble':m==='sleepy'?'sleep':m==='grumpy'?'grump':'hop');
-  const tp=currentType(); $('#typeLabel').textContent=tp?tp.name:''; if(tp && !(D.typesSeen||[]).includes(tp.id)){ D.typesSeen=(D.typesSeen||[]).concat(tp.id); save(); }
+  const tp=currentType(); $('#typeLabel').textContent=tp?tp.name:'';
+  if(tp && !(D.typesSeen||[]).includes(tp.id)){
+    D.typesSeen=(D.typesSeen||[]).concat(tp.id); save();
+    if(D.named && D.typesSeen.length>1 && $('#modal').hidden){
+      const pic=el('div',{class:'evo'}); pic.innerHTML=petSVG(si,'happy',tp);
+      setTimeout(()=>modal('あたらしいタイプ！', el('div',{style:'text-align:center'},pic,el('p',{style:'margin:0;font-weight:700;font-size:1.05rem'},tp.name),el('p',{class:'hint',style:'margin:4px 0 0'},tp.desc),el('p',{class:'hint',style:'margin:8px 0 0;font-family:var(--pixel)'},'タイプずかん '+D.typesSeen.length+' / '+(W.types||[]).length)),[{label:'うれしい',primary:true}]),400);
+    }
+  }
+  // 本体の下のひとこと（怒ってる日は「5分だけ」）
+  const nd=$('#nudge'); nd.innerHTML='';
+  if(m==='grumpy' && !D.running){
+    const last=D.logs.length?D.logs[D.logs.length-1]:null; const it=last&&findItem(last.g,last.i) || (D.genres.find(g=>g.items.length)&&{g:D.genres.find(g=>g.items.length),it:D.genres.find(g=>g.items.length).items[0]});
+    if(it) nd.append(el('button',{class:'nudgebtn',onclick:()=>{ D.running={at:Date.now(),g:it.g.id,i:it.it.id,n:it.it.name}; save(); showTab('today'); renderLCD(); timerNotify(); toast('5分だけ。それで じゅうぶん'); }},'5分だけ「'+it.it.name+'」→ 機嫌なおる'));
+  } else if(m==='happy' && !D.running){
+    nd.append(el('span',{class:'mini',style:'display:block;margin:0'},'今日はもう十分。あとは休んでいい。'));
+  }
   const area=$('#stageArea');
   area.querySelectorAll('.zzz,.spark').forEach(n=>n.remove());
   if(si>0 && m==='sleepy') area.append(el('div',{class:'zzz'},'z z'));
@@ -708,7 +772,8 @@ function addLog(at, min, g, item, memo){
   afterChange(min);
   const nowMin=dayMin(todayK());
   celebrate(before<D.goal && nowMin>=D.goal);
-  if(before<D.goal && nowMin>=D.goal) setTimeout(()=>toast('きょうの もくひょう たっせい！'),300);
+  const cheer=fill(pick(LINES.cheer), min);
+  setTimeout(()=>toast(before<D.goal && nowMin>=D.goal ? '今日の目標 達成！ '+cheer : cheer),300);
 }
 
 // ---------- 画面：そだてる ----------
@@ -727,62 +792,88 @@ function menuChips(onPick){
   });
   return wrap;
 }
+function fold(id, title, sub, body, openDefault){
+  const isOpen = (id in (D.ui||{})) ? !!D.ui[id] : !!openDefault;
+  const d=el('details',{class:'card fold'}); if(isOpen) d.setAttribute('open','');
+  const h=el('summary',{class:'fh'},el('span',null,title),sub?el('span',{class:'sub'},sub):null,el('span',{class:'chev'}));
+  d.append(h, el('div',{class:'fb'},body));
+  d.ontoggle=()=>{ D.ui=D.ui||{}; D.ui[id]=d.open; save(); };
+  return d;
+}
 function renderToday(){
   const s=$('#tab-today'); s.innerHTML='';
   if(selected && !findItem(selected.g,selected.i)) selected=null;
   const isToday=viewDay===todayK();
-  if(!D.setup) s.append(el('div',{class:'banner'},el('b',null,'まずは 育成メニューを 決めよう'),
-    el('p',{class:'hint',style:'margin:0 0 8px'},'じぶんを育てるために やりたいことを 登録します。いまは おためしの メニューが 入っています。'),
-    el('button',{class:'btn primary',onclick:()=>showTab('settings')},'育成メニューを 決める')));
   const prev=el('button',{class:'navbtn','aria-label':'前の日',onclick:()=>{ viewDay=dk(addDays(parseK(viewDay),-1)); renderToday(); }},'‹');
   const next=el('button',{class:'navbtn','aria-label':'次の日',disabled:isToday?'':false,onclick:()=>{ viewDay=dk(addDays(parseK(viewDay),1)); renderToday(); }},'›');
   s.append(el('div',{class:'datenav'},prev,el('div',null,el('b',null,fmtDay(viewDay)),el('small',null,isToday?'きょう':'あとから記録できます')),next));
+  // ゴール（最初に決めた「なりたい私」）
+  if(isToday){
+    const lastWk=dk(addDays(weekStart(new Date()),-7)); const wpick=(D.weekly[lastWk]&&D.weekly[lastWk].pick)||'';
+    s.append(el('p',{class:'vision'},D.vision?['ゴール：',el('b',null,D.vision)]:[],D.vision&&wpick?'　／　':'',wpick?'今週は「'+wpick+'」':''));
+    const sinceStart=Math.round((parseK(todayK())-parseK(D.start))/864e5);
+    if(sinceStart<7 && !D.logs.length) s.append(el('p',{class:'mini'},WELCOME.meaning));
+  }
 
-  // 合計
+  // 合計＋タイマー（いちばん大事なものを いちばん上に）
   const logs=logsOn(viewDay), m=logs.reduce((a,l)=>a+l.min,0);
+  const done=m>=D.goal;
   const tot=el('div',{class:'card total'},
-    el('div',{class:'goal'},isToday?'きょう そだてた じかん':'この日 そだてた じかん'),
+    el('div',{class:'goal'},isToday?'今日 育てた時間':'この日 育てた時間'),
     el('div',{class:'big',id:'dayTotal'},fmtMin(m)),
-    el('div',{class:'goalbar'},el('i',{style:'width:'+Math.min(100,m/D.goal*100)+'%'})),
-    el('div',{class:'goal'},m>=D.goal?'もくひょう '+fmtMin(D.goal)+' たっせい！':'もくひょう '+fmtMin(D.goal)+' まで あと '+fmtMin(D.goal-m)));
+    el('div',{class:'goalbar'+(done?' done':'')},el('i',{style:'width:'+Math.min(100,m/D.goal*100)+'%'})),
+    el('div',{class:'goal'},done?'目標 '+fmtMin(D.goal)+' 達成。今日はもう十分。':'目標 '+fmtMin(D.goal)+' まで あと '+fmtMin(D.goal-m)));
   const gs=el('div',{class:'gsum',style:'margin-top:6px'});
   D.genres.forEach(g=>{ const mm=logs.filter(l=>l.g===g.id).reduce((a,l)=>a+l.min,0); if(mm) gs.append(el('span',null,el('i',{class:'dot',style:'background:'+hexOf(g.color)}),g.name+' '+fmtMin(mm))); });
-  tot.append(gs); s.append(tot);
-  // 今週そだてたいもの（先週のふりかえりで選んだもの）
+  tot.append(gs);
+  const hasItems=D.genres.some(g=>g.items.length);
   if(isToday){
-    const thisWk=dk(weekStart(new Date())), lastWk=dk(addDays(weekStart(new Date()),-7));
-    const pick=(D.weekly[lastWk]&&D.weekly[lastWk].pick)||'';
-    if(pick) s.append(el('p',{class:'hint',style:'text-align:center;margin:-4px 0 10px'},'今週 そだてたいもの：'+pick));
-    const wd=(new Date().getDay()+6)%7;
-    if(wd===6 && !D.weekly[thisWk]) s.append(el('button',{class:'btn',style:'display:block;margin:0 auto 12px',onclick:()=>showTab('review')},'日曜日。今週の ふりかえりを 1問だけ →'));
+    const tm=el('div',{style:'margin-top:14px;border-top:1px solid var(--line);padding-top:12px'});
+    if(D.running){
+      tm.append(el('div',{class:'running-name'},D.running.n+' を育て中'),el('div',{class:'clock',id:'clock'},'0:00:00'),
+        el('p',{class:'hint',style:'text-align:center;margin:0'},'ページを閉じても計り続けます'),
+        el('button',{class:'bigbtn stop',onclick:stopTimer},'ストップして記録'));
+    } else if(!hasItems){
+      tm.append(el('p',{class:'hint'},'育成メニューがありません。「せってい」で作ってね。'));
+    } else {
+      tm.append(el('p',{class:'hint',style:'text-align:left'},'何を育てる？ 選んでスタート'),menuChips(renderToday));
+      const sel=selected && findItem(selected.g,selected.i);
+      tm.append(el('button',{class:'bigbtn',disabled:sel?false:'',onclick:()=>{ if(!sel) return; D.running={at:Date.now(),g:sel.g.id,i:sel.it.id,n:sel.it.name}; save(); renderLCD(); renderToday(); timerNotify(); }},
+        sel?'「'+sel.it.name+'」をスタート':'メニューを選んでね'));
+    }
+    tot.append(tm);
   }
+  s.append(tot);
+  if(isToday){
+    const thisWk=dk(weekStart(new Date())), wd=(new Date().getDay()+6)%7;
+    if(wd===6 && !D.weekly[thisWk]) s.append(el('button',{class:'btn',style:'display:block;margin:0 auto 12px',onclick:()=>showTab('review')},'日曜日。今週のふりかえりを1問だけ →'));
+  }
+
+  // ---- ここから下は「きょうのおまけ」。たたんである ----
   // きょうの問い
   const toi=toiOf(viewDay);
   if(toi){
     const saved=D.toi[viewDay]||null;
-    const c=el('div',{class:'card toi'},
-      el('div',{class:'toihead'},el('span',null,isToday?'きょうの問い':'この日の問い'),el('span',{class:'toinum'},'No.'+(toi.i+1)+(toi.deep?'　🕯️':''))),
+    const body=el('div',{class:'toi',style:'border-left:3px solid var(--gold);padding-left:10px'},
+      el('div',{class:'toihead'},el('span',null,'No.'+(toi.i+1)+(toi.deep?'　🕯️':''))),
       el('p',{class:'toiq'},toi.q),
-      toi.h?el('p',{class:'toih'},toi.h):null,
-      null);
-    const ta=el('textarea',{class:'in',maxlength:'400',placeholder:'きづいたことを ひとこと（なくてもOK）','aria-label':'気づきメモ'},saved&&saved.text||'');
+      toi.h?el('p',{class:'toih'},toi.h):null);
+    const ta=el('textarea',{class:'in',maxlength:'400',placeholder:'気づいたことをひとこと（なくてもOK）','aria-label':'気づきメモ'},saved&&saved.text||'');
     const mark=el('button',{class:'btn sm toimark','aria-pressed':String(!!(saved&&saved.mark))},(saved&&saved.mark)?'★ ドキッとした':'☆ ドキッとした');
     mark.onclick=()=>{ const cur=D.toi[viewDay]||{i:toi.i,q:toi.q,text:'',mark:false}; cur.mark=!cur.mark; D.toi[viewDay]=cur; if(!cur.text&&!cur.mark) delete D.toi[viewDay]; save(); renderToday(); };
     const ok=el('button',{class:'btn primary sm',onclick:()=>{
       const t=ta.value.trim().slice(0,400); const had=!!(saved&&saved.text);
       const cur=D.toi[viewDay]||{i:toi.i,q:toi.q,text:'',mark:false}; cur.text=t; cur.i=toi.i; cur.q=toi.q; D.toi[viewDay]=cur;
       if(!cur.text&&!cur.mark) delete D.toi[viewDay];
-      afterChange(t&&!had?CONFIG.xp.toi:0); if(t&&!had) beep('tiny'); toast(t?'書きとめたよ':'メモを けしたよ'); renderToday();
+      afterChange(t&&!had?CONFIG.xp.toi:0); if(t&&!had) beep('tiny'); toast(t?'書きとめたよ':'メモを消したよ'); renderToday();
     }},saved&&saved.text?'書きなおす':'書きとめる');
-    c.append(ta,el('div',{class:'btnrow',style:'justify-content:space-between;align-items:center'},mark,ok));
-    s.append(c);
+    body.append(ta,el('div',{class:'btnrow',style:'justify-content:space-between;align-items:center'},mark,ok));
+    s.append(fold('toi', isToday?'今日の問い':'この日の問い', saved&&saved.text?'✓ 書いた':(saved&&saved.mark?'★':'1分'), body, false));
   }
-
-  // 今日のセルフハグ（クエスト）
+  // 今日のセルフハグ
   if(isToday){
     const qs=questsFor(viewDay), done=D.quests[viewDay]||[];
     if(qs.length){
-      const qc=el('div',{class:'card'},el('h3',null,'今日のセルフハグ'),el('p',{class:'hint'},'じぶんを だきしめる ちいさなこと。1つ できたら '+CONFIG.xp.quest+'EXP。やらなくても だいじょうぶ。'));
       const box=el('div',{class:'items',style:'grid-template-columns:1fr'});
       qs.forEach(q=>{
         const on=done.includes(q);
@@ -793,59 +884,41 @@ function renderToday(){
           afterChange(gain); if(gain) beep('tiny'); renderToday();
         }},el('span',{class:'box'}),el('span',null,q)));
       });
-      qc.append(box); s.append(qc);
+      s.append(fold('hug','今日のセルフハグ', done.length+'/'+qs.length, el('div',null,el('p',{class:'hint'},'自分を抱きしめる小さなこと。1つで '+CONFIG.xp.quest+'EXP。やらなくても大丈夫。'),box), false));
     }
-  }
-  const hasItems=D.genres.some(g=>g.items.length);
-  // タイマー
-  if(isToday){
-    const c=el('div',{class:'card'},el('h3',null,'タイマーで はかる'));
-    if(D.running){
-      c.append(el('div',{class:'running-name'},D.running.n+' を そだて中'),el('div',{class:'clock',id:'clock'},'0:00:00'),
-        el('p',{class:'hint',style:'text-align:center;margin:0'},'ページを とじても はかり つづけます'),
-        el('button',{class:'bigbtn stop',onclick:stopTimer},'ストップして 記録'));
-    } else if(!hasItems){
-      c.append(el('p',{class:'hint'},'育成メニューが ありません。「せってい」で つくってね。'));
-    } else {
-      c.append(el('p',{class:'hint'},'なにを そだてる？ えらんで スタート'),menuChips(renderToday));
-      const sel=selected && findItem(selected.g,selected.i);
-      c.append(el('button',{class:'bigbtn',disabled:sel?false:'',onclick:()=>{ if(!sel) return; D.running={at:Date.now(),g:sel.g.id,i:sel.it.id,n:sel.it.name}; save(); renderLCD(); renderToday(); timerNotify(); }},
-        sel?'「'+sel.it.name+'」を スタート':'メニューを えらんでね'));
-    }
-    s.append(c);
   }
   // あとから記録
   if(hasItems){
-    const c=el('div',{class:'card'},el('h3',null,'あとから 記録する'));
     const minIn=el('input',{class:'in',type:'number',inputmode:'numeric',min:'1',max:String(MAX_MIN),placeholder:'分','aria-label':'分数'});
-    const memo=el('textarea',{class:'in',maxlength:'300',placeholder:'メモ（きづいたこと・やったこと／なくてもOK）','aria-label':'メモ'});
-    c.append(el('p',{class:'hint'},'1. メニューを えらぶ'),menuChips(renderToday));
-    c.append(el('p',{class:'hint',style:'margin:10px 0 4px'},'2. じかんを いれる'),
+    const memo=el('textarea',{class:'in',maxlength:'300',placeholder:'メモ（気づいたこと・やったこと／なくてもOK）','aria-label':'メモ'});
+    const body=el('div',null,el('p',{class:'hint'},'1. メニューを選ぶ'),menuChips(renderToday),
+      el('p',{class:'hint',style:'margin:10px 0 4px'},'2. 時間を入れる'),
       el('div',{class:'quick'},[15,30,60,120].map(n=>el('button',{onclick:()=>{ minIn.value=String((+minIn.value||0)+n); }},'+'+(n<60?n+'分':n/60+'時間')))),
       minIn,el('p',{class:'hint',style:'margin:10px 0 4px'},'3. メモ'),memo,
       el('button',{class:'bigbtn',onclick:()=>{
         const sel=selected && findItem(selected.g,selected.i);
         const v=Math.round(+minIn.value);
-        if(!sel){ toast('メニューを えらんでね'); return; }
-        if(!(v>0)){ toast('じかんを いれてね'); return; }
+        if(!sel){ toast('メニューを選んでね'); return; }
+        if(!(v>0)){ toast('時間を入れてね'); return; }
         const at=isToday?Date.now()-v*60000:parseK(viewDay).getTime()+12*3600000;
         addLog(Math.max(at,parseK(viewDay).getTime()), v, sel.g, sel.it, memo.value);
-        toast(sel.it.name+' '+fmtMin(v)+' 記録したよ'); renderToday();
+        renderToday();
       }},'記録する'));
-    s.append(c);
+    s.append(fold('manual','あとから記録','', body, !isToday));
   }
   // この日の記録
-  const lc=el('div',{class:'card'},el('h3',null,'この日の 記録'));
-  if(!logs.length) lc.append(el('p',{class:'hint',style:'margin:0'},'まだ ありません。'));
   const ul=el('ul',{class:'loglist'});
+  if(!logs.length) ul.append(el('p',{class:'hint',style:'margin:0'},'まだありません。'));
   logs.slice().sort((a,b)=>b.at-a.at).forEach(l=>{
     const d=new Date(l.at), del=el('button',{class:'btn sm del'});
-    twoTap(del,'けす','もう1回で けす',()=>{ D.logs=D.logs.filter(x=>x.id!==l.id); afterChange(0); renderToday(); });
+    twoTap(del,'消す','もう1回で消す',()=>{ D.logs=D.logs.filter(x=>x.id!==l.id); afterChange(0); renderToday(); });
     ul.append(el('li',null,el('div',{class:'top'},el('span',null,el('i',{class:'dot',style:'background:'+colorOfLog(l)}),l.n+'　'+fmtMin(l.min)),del),
       el('div',{class:'meta'},pad(d.getHours())+':'+pad(d.getMinutes())+(genreById(l.g)?'　'+genreById(l.g).name:'')),
       l.memo?el('div',{class:'memo'},l.memo):null));
   });
-  lc.append(ul); s.append(lc);
+  s.append(fold('logs','この日の記録', logs.length?logs.length+'件':'', ul, false));
+  // イヤな日の部屋（小さな扉）
+  const door=el('button',{class:'door',onclick:()=>showTab('quest')}); door.innerHTML=monSVG('#B49AE0')+'<span>イヤなことがあった日は、こちらの部屋へ →</span>'; s.append(door);
   tick();
 }
 function stopTimer(){
@@ -855,16 +928,16 @@ function stopTimer(){
   const minIn=el('input',{class:'in',type:'number',inputmode:'numeric',min:'1',max:String(MAX_MIN),value:String(Math.min(MAX_MIN,Math.round(mins))),'aria-label':'分数'});
   const memo=el('textarea',{class:'in',maxlength:'300',placeholder:'メモ（きづいたこと・やったこと／なくてもOK）','aria-label':'メモ'});
   const discard=el('button',{class:'btn sm del',style:'margin-top:10px'});
-  twoTap(discard,'記録しないで リセット','もう1回で リセット',()=>{ D.running=null; save(); $('#modal').hidden=true; renderLCD(); renderToday(); timerNotify(); });
+  twoTap(discard,'記録しないでリセット','もう1回でリセット',()=>{ D.running=null; save(); $('#modal').hidden=true; renderLCD(); renderToday(); timerNotify(); });
   const body=el('div',null,
-    el('p',{style:'margin:0 0 8px'},'「'+r.n+'」を '+fmtMin(mins)+' そだてた！'),
-    mins<1?el('p',{class:'hint'},'1分未満なので、記録するなら 分を いれてね。'):null,
-    mins>180?el('p',{class:'hint'},'タイマーの とめわすれ かも？ 分を なおせます。'):null,
-    el('label',{class:'f'},'じかん（分）'),minIn,el('div',{style:'height:8px'}),el('label',{class:'f'},'メモ'),memo,discard);
+    el('p',{style:'margin:0 0 8px'},'「'+r.n+'」を '+fmtMin(mins)+' 育てた！'),
+    mins<1?el('p',{class:'hint'},'1分未満なので、記録するなら分を入れてね。'):null,
+    mins>180?el('p',{class:'hint'},'タイマーの止め忘れかも？ 分を直せます。'):null,
+    el('label',{class:'f'},'時間（分）'),minIn,el('div',{style:'height:8px'}),el('label',{class:'f'},'メモ'),memo,discard);
   modal('おつかれさま', body, [{label:'もどる'},{label:'記録する',primary:true,fn:()=>{
     const v=Math.round(+minIn.value);
-    if(!(v>0)){ toast('じかんを いれてね'); return false; }
-    if(!found){ toast('このメニューは けされています'); return false; }
+    if(!(v>0)){ toast('時間を入れてね'); return false; }
+    if(!found){ toast('このメニューは消されています'); return false; }
     D.running=null; timerNotify();
     addLog(r.at, v, found.g, found.it, memo.value);
     renderToday();
@@ -908,7 +981,7 @@ async function fireRemind(){
   const [h,mi]=n.time.split(':').map(Number); const now=new Date();
   if(now.getHours()*60+now.getMinutes() < h*60+mi) return;
   const q=todayToi(), m=dayMin(todayK());
-  const ok=await showNote('きょうの問い', q+(m?'\n（きょう '+fmtMin(m)+' そだてた）':''), 'daily', {data:{open:'today'}});
+  const ok=await showNote('きょうの問い', q+(m?'\n（きょう '+fmtMin(m)+' そだてた）':'')+(D.vision?'\n'+fill(pick(LINES.cheerIdle)):''), 'daily', {data:{open:'today'}});
   if(ok){ n.last=todayK(); save(); }
   syncRemindCfg();
 }
@@ -941,7 +1014,7 @@ function renderReview(){
   const we=addDays(ws,6);
   card.append(el('div',{class:'datenav'},
     el('button',{class:'navbtn','aria-label':'前の週',onclick:()=>{ weekOffset--; renderReview(); }},'‹'),
-    el('div',null,el('b',null,(ws.getMonth()+1)+'/'+ws.getDate()+' 〜 '+(we.getMonth()+1)+'/'+we.getDate()),el('small',null,'この週 '+fmtMin(sums.reduce((a,b)=>a+b,0)))),
+    el('div',null,el('b',null,(ws.getMonth()+1)+'/'+ws.getDate()+' 〜 '+(we.getMonth()+1)+'/'+we.getDate()),el('small',null,'この週 '+fmtMin(sums.reduce((a,b)=>a+b,0))+(D.vision?'　→「'+D.vision+'」へ':''))),
     el('button',{class:'navbtn','aria-label':'次の週',disabled:weekOffset>=0?'':false,onclick:()=>{ weekOffset++; renderReview(); }},'›')));
   const bars=el('div',{class:'bars'});
   const order=[...D.genres.map(g=>g.id),'_gone'];
@@ -959,8 +1032,8 @@ function renderReview(){
   const top=Object.entries(by).sort((a,b)=>b[1]-a[1]).slice(0,3);
   const hit=sums.filter(v=>v>=D.goal).length;
   card.append(el('p',{class:'hint',style:'margin:10px 0 0'},
-    'もくひょう たっせい：'+hit+'日（金わく）',el('br'),
-    top.length?'よく そだてた：'+top.map(([n,v])=>n+' '+fmtMin(v)).join('・'):'この週の 記録は まだ ありません'));
+    '目標達成：'+hit+'日（金わく）',el('br'),
+    top.length?'よく育てた：'+top.map(([n,v])=>n+' '+fmtMin(v)).join('・'):'この週の記録はまだありません'));
   s.append(card);
 
   // 週のふりかえり（1問だけ）
@@ -968,8 +1041,8 @@ function renderReview(){
   const saved=D.weekly[wk]||null;
   if(isThisWeek || saved){
     const topName=top.length?top[0][0]:null;
-    const wc=el('div',{class:'card toi'},el('div',{class:'toihead'},el('span',null,isThisWeek?'今週の ふりかえり':'この週の ふりかえり'),el('span',{class:'toinum'},WJ[wd]+'曜日')));
-    wc.append(el('p',{class:'toiq'},(topName?'今週 いちばん そだてたのは「'+topName+'」。':'今週は まだ 記録が すくなめ。')+'\n来週、ひとつ そだてたいのは？'));
+    const wc=el('div',{class:'card toi'},el('div',{class:'toihead'},el('span',null,isThisWeek?'今週のふりかえり':'この週のふりかえり'),el('span',{class:'toinum'},WJ[wd]+'曜日')));
+    wc.append(el('p',{class:'toiq'},(topName?'今週いちばん育てたのは「'+topName+'」。':'今週はまだ記録が少なめ。')+'\n来週、ひとつ育てたいのは？'));
     const chips=el('div',{class:'chips'});
     D.genres.forEach(g=>g.items.forEach(it=>chips.append(el('button',{class:'chip',style:'--g:'+hexOf(g.color),'aria-pressed':String(!!(saved&&saved.pick===it.name)),onclick:()=>{ const cur=D.weekly[wk]||{pick:'',memo:''}; cur.pick=cur.pick===it.name?'':it.name; D.weekly[wk]=cur; save(); beep('tiny'); renderReview(); }},it.name))));
     const memo=el('textarea',{class:'in',maxlength:'300',placeholder:'ひとこと（なくてもOK）'},saved&&saved.memo||'');
@@ -981,7 +1054,7 @@ function renderReview(){
   // この週の気づき（問いへの答え）
   const toiWeek=keys.filter(k=>D.toi[k]&&(D.toi[k].text||D.toi[k].mark));
   if(toiWeek.length){
-    const c=el('div',{class:'card'},el('h3',null,'この週の 気づき'));
+    const c=el('div',{class:'card'},el('h3',null,'この週の気づき'));
     const ul=el('ul',{class:'loglist'});
     toiWeek.slice().reverse().forEach(k=>{ const t=D.toi[k], d=parseK(k); ul.append(el('li',null,
       el('div',{class:'meta'},(d.getMonth()+1)+'/'+d.getDate()+'('+WD[d.getDay()]+')　'+(t.mark?'★ ':'')+(t.q||('No.'+(t.i+1)))),
@@ -991,14 +1064,14 @@ function renderReview(){
   // この週のメモ
   const memos=weekLogs.flat().filter(l=>l.memo).sort((a,b)=>b.at-a.at);
   if(memos.length){
-    const c=el('div',{class:'card'},el('h3',null,'この週の メモ'));
+    const c=el('div',{class:'card'},el('h3',null,'この週のメモ'));
     const ul=el('ul',{class:'loglist'});
     memos.forEach(l=>{ const d=new Date(l.at); ul.append(el('li',null,el('div',{class:'meta'},(d.getMonth()+1)+'/'+d.getDate()+'('+WD[d.getDay()]+')　'+l.n+' '+fmtMin(l.min)),el('div',{class:'memo'},l.memo))); });
     c.append(ul); s.append(c);
   }
 
   // 曜日ごと
-  const c2=el('div',{class:'card'},el('h3',null,'曜日ごとの へいきん'));
+  const c2=el('div',{class:'card'},el('h3',null,'曜日ごとの平均'));
   const sum=[0,0,0,0,0,0,0], occ=[0,0,0,0,0,0,0];
   const first=D.logs.reduce((a,l)=>{ const k=dk(new Date(l.at)); return k<a?k:a; },D.start);
   for(let d=parseK(first); dk(d)<=tk; d=addDays(d,1)){ const w=(d.getDay()+6)%7; occ[w]++; sum[w]+=dayMin(dk(d)); }
@@ -1009,8 +1082,8 @@ function renderReview(){
   const seenDays=occ.reduce((a,b)=>a+b,0), best=avg.indexOf(Math.max(...avg));
   let worst=-1; avg.forEach((v,i)=>{ if(occ[i] && (worst<0 || v<avg[worst])) worst=i; });
   c2.append(el('p',{class:'hint',style:'margin:10px 0 0'}, seenDays<14
-    ? '2週間ぶん たまると、ここに 曜日の くせが 出てくるよ（いま '+seenDays+'日め）。'
-    : 'いちばん そだててるのは '+WJ[best]+'曜日。'+(best!==worst?WJ[worst]+'曜日は ちいさめでOK、の日かも。':'')));
+    ? '2週間ぶんたまると、ここに曜日のくせが出てきます（いま '+seenDays+'日め）。'
+    : 'いちばん育てているのは'+WJ[best]+'曜日。'+(best!==worst?WJ[worst]+'曜日は小さめでOK、の日かも。':'')));
   s.append(c2);
 
   // いまのタイプ
@@ -1022,18 +1095,19 @@ function renderReview(){
       el('p',{style:'margin:0;font-weight:700;font-size:1.05rem'},tp.name),
       el('p',{class:'hint',style:'margin:4px 0 8px'},tp.desc),
       el('p',{class:'hint',style:'margin:0;font-family:var(--pixel)'},'タイプずかん '+seen+' / '+totalTypes),
-      el('p',{class:'hint',style:'margin:6px 0 0'},'この2週間の 向き合い方で 決まります。変わっていくのも 楽しみのひとつ。'));
+      el('p',{class:'hint',style:'margin:6px 0 0'},'この2週間の向き合い方で決まります。変わっていくのも楽しみのひとつ。'),
+      el('p',{class:'hint',style:'margin:6px 0 0'},WELCOME.meaning));
     s.append(ct);
   }
   // きろく
-  s.append(el('div',{class:'card'},el('h3',null,'きろく'),el('div',{class:'stats'},
-    el('div',{class:'stat'},el('b',null,streak()+'日'),el('small',null,'れんぞく')),
-    el('div',{class:'stat'},el('b',null,bestStreak()+'日'),el('small',null,'さいこう')),
-    el('div',{class:'stat'},el('b',null,fmtShort(totalMin())),el('small',null,'そうじかん')))));
+  s.append(el('div',{class:'card'},el('h3',null,'記録'),el('div',{class:'stats'},
+    el('div',{class:'stat'},el('b',null,streak()+'日'),el('small',null,'連続')),
+    el('div',{class:'stat'},el('b',null,bestStreak()+'日'),el('small',null,'最高')),
+    el('div',{class:'stat'},el('b',null,fmtShort(totalMin())),el('small',null,'総時間')))));
   // ドキッとした問い（ぜんぶ）
   const marked=Object.keys(D.toi).filter(k=>D.toi[k].mark).sort().reverse();
   if(marked.length){
-    const c=el('div',{class:'card'},el('h3',null,'★ ドキッとした問い'),el('p',{class:'hint'},'ドキッとした問いほど、いまの踏み石。'));
+    const c=el('div',{class:'card'},el('h3',null,'★ ドキッとした問い'),el('p',{class:'hint'},'ドキッとした問いほど、今の踏み石。'));
     const ul=el('ul',{class:'loglist'});
     marked.slice(0,30).forEach(k=>{ const t=D.toi[k], d=parseK(k); ul.append(el('li',null,el('div',{class:'meta'},(d.getMonth()+1)+'/'+d.getDate()),el('div',null,t.q||('No.'+(t.i+1))),t.text?el('div',{class:'memo'},t.text):null)); });
     c.append(ul); s.append(c);
@@ -1047,10 +1121,11 @@ function renderQuest(){
     el('p',{style:'margin:0 0 6px;font-weight:700'},(W.room&&W.room.title)||'イヤなことが あった日に 開く部屋'),
     el('p',{class:'hint',style:'margin:0'},(W.room&&W.room.lead)||(D.pet+'と いっしょに 夢の中へ。モンスター（イヤな気持ち）に 5つの といで こたえると、気持ちが すこし整理されます。')));
   s.append(intro);
+  s.append(el('button',{class:'btn sm',style:'display:block;margin:-4px auto 12px',onclick:()=>showTab('today')},'← きょうに戻る'));
   const b=el('button',{class:'bossbtn',onclick:startBattle});
   b.innerHTML=monSVG('#B49AE0')+'<span><b>夢の中へ（ボスせん）</b><small>'+CONFIG.xp.boss+'EXP。とちゅうで「にげる」も OK</small></span>';
   s.append(b);
-  const c4=el('div',{class:'card'},el('h3',null,'たたかいの きろく'));
+  const c4=el('div',{class:'card'},el('h3',null,'たたかいの記録'));
   if(!D.battles.length) c4.append(el('p',{class:'hint',style:'margin:0'},'まだ ありません。'));
   const ul=el('ul',{class:'loglist'});
   D.battles.slice().reverse().slice(0,20).forEach(bt=>{
@@ -1171,24 +1246,20 @@ function endBattle(won){
 // ---------- 画面：せってい ----------
 function renderSettings(){
   const s=$('#tab-settings'); s.innerHTML='';
-  if(!D.setup) s.append(el('div',{class:'banner'},el('b',null,'育成メニューを 決めよう'),
-    el('p',{class:'hint',style:'margin:0 0 8px'},'下の「育成メニュー」で、じぶんを育てるために やりたいことを 足したり けしたり してね。ジャンル名・色も かえられます。あとから いつでも 変更OK。'),
-    el('button',{class:'btn primary',onclick:()=>{ D.setup=true; save(); showTab('today'); toast('いってらっしゃい！'); }},'これで はじめる')));
-
   // 目標
-  const c0=el('div',{class:'card'},el('h3',null,'1日の もくひょう'));
+  const c0=el('div',{class:'card'},el('h3',null,'1日の目標'));
   const goal=el('select',{class:'in','aria-label':'1日の目標'});
   [15,30,45,60,90,120,180,240].concat([D.goal]).filter((v,i,a)=>a.indexOf(v)===i).sort((a,b)=>a-b).forEach(v=>goal.append(el('option',{value:String(v),selected:v===D.goal?'':false},fmtMin(v))));
   goal.onchange=()=>{ D.goal=+goal.value; save(); renderLCD(); };
   const snd=el('button',{class:'btn sm'+(D.sound?' primary':''),style:'margin-top:10px','aria-pressed':String(D.sound),onclick:()=>{ D.sound=!D.sound; save(); if(D.sound) beep('small'); renderSettings(); }},D.sound?'♪ ごほうびの音 ON':'♪ ごほうびの音 OFF');
-  c0.append(goal, el('p',{class:'hint',style:'margin:8px 0 0'},'たっせいすると '+'キャラが ぴかぴかに なります。'), snd);
+  c0.append(goal, el('p',{class:'hint',style:'margin:8px 0 0'},'達成するとキャラがぴかぴかになります。'), snd);
   s.append(c0);
 
   // おしらせ
-  const cn=el('div',{class:'card'},el('h3',null,'まいにちの おしらせ'));
+  const cn=el('div',{class:'card'},el('h3',null,'毎日のおしらせ'));
   const st=notifyState();
   if(st==='unsupported'){
-    cn.append(el('p',{class:'hint',style:'margin:0'},'通知は、ネット上の置き場所（https）に置いて ホーム画面に追加すると使えます。いまの開き方では使えません。'));
+    cn.append(el('p',{class:'hint',style:'margin:0'},'通知は、ホーム画面に追加したアプリから開くと使えます。いまの開き方では使えません。'));
   } else {
     const n=D.notify;
     const tog=el('button',{class:'btn'+(n.on?' primary':''),'aria-pressed':String(n.on)},n.on?'おしらせ ON':'おしらせ OFF');
@@ -1201,12 +1272,12 @@ function renderSettings(){
     };
     time.onchange=()=>{ n.time=time.value||'21:00'; n.last=''; save(); scheduleRemind(); };
     cn.append(el('div',{class:'btnrow',style:'align-items:center'},tog,el('span',{class:'hint',style:'margin:0'},'時刻'),time),
-      el('p',{class:'hint',style:'margin:10px 0 0'},'この時刻に「きょうの問い」が 通知で とどきます。タイマー中は 通知バーに「そだて中」が 出ます。'+(st==='denied'?'（いまは スマホ側で 通知が止められています）':'')));
+      el('p',{class:'hint',style:'margin:10px 0 0'},'この時刻に「今日の問い」が通知で届きます。タイマー中は通知バーに「育て中」が出ます。'+(st==='denied'?'（いまはスマホ側で通知が止められています）':'')));
   }
   s.append(cn);
 
   // 育成メニュー
-  const c2=el('div',{class:'card'},el('h3',null,'育成メニュー'),el('p',{class:'hint'},'名前を変えても、これまでの記録は のこります。'));
+  const c2=el('div',{class:'card'},el('h3',null,'育成メニュー'),el('p',{class:'hint'},'名前を変えても、これまでの記録は残ります。'));
   D.genres.forEach((g,gi)=>{
     const box=el('div',{class:'gedit',style:'--g:'+hexOf(g.color)});
     const nm=el('input',{class:'in',maxlength:'12',value:g.name,'aria-label':'ジャンル名'});
@@ -1238,17 +1309,26 @@ function renderSettings(){
   }},'＋ ジャンルを ふやす'));
   s.append(c2);
 
-  // なまえ
-  const c1=el('div',{class:'card'},el('h3',null,'なまえ'));
+  // ---- ここから下は「もっと見る」の中 ----
+  const more=el('div'); const moreBtn=el('button',{class:'btn',style:'display:block;margin:4px auto 14px'},'もっと見る（名前・ゴール・セルフハグ・共有・引っ越し）');
+  more.hidden=!(D.ui&&D.ui.more); moreBtn.hidden=!more.hidden;
+  moreBtn.onclick=()=>{ more.hidden=false; moreBtn.hidden=true; D.ui=D.ui||{}; D.ui.more=true; save(); };
+  s.append(moreBtn, more);
+  const s2=more;
+
+  // なまえ・ゴール
+  const c1=el('div',{class:'card'},el('h3',null,'名前とゴール'));
   const pet=el('input',{class:'in',maxlength:'10',value:D.pet,'aria-label':'キャラのなまえ'});
   pet.oninput=()=>{ D.pet=pet.value.trim()||'エゴちゃん'; save(); renderLCD(); };
   const ttl=el('input',{class:'in',maxlength:'24',value:D.title,'aria-label':'ゲームのタイトル'});
   ttl.oninput=()=>{ D.title=ttl.value.trim()||'エゴ育成ゲーム'; save(); renderLCD(); };
-  c1.append(el('label',{class:'f'},'キャラのなまえ'),pet,el('div',{style:'height:8px'}),el('label',{class:'f'},'ゲームのタイトル（本体の上に出ます）'),ttl);
-  s.append(c1);
+  const vis=el('input',{class:'in',maxlength:'30',value:D.vision,placeholder:WELCOME.goalDefault,'aria-label':'ゴール'});
+  vis.oninput=()=>{ D.vision=vis.value.trim().slice(0,30); save(); renderLCD(); };
+  c1.append(el('label',{class:'f'},'ゴール（なりたい私・ひとこと）'),vis,el('div',{style:'height:8px'}),el('label',{class:'f'},'キャラの名前'),pet,el('div',{style:'height:8px'}),el('label',{class:'f'},'ゲームのタイトル（本体の上に出ます）'),ttl);
+  s2.append(c1);
 
   // クエスト
-  const c3=el('div',{class:'card'},el('h3',null,'今日のセルフハグ（リスト）'),el('p',{class:'hint'},'この中から 毎日'+CONFIG.questsPerDay+'つ、そだてる画面に 出ます。'));
+  const c3=el('div',{class:'card'},el('h3',null,'今日のセルフハグ（リスト）'),el('p',{class:'hint'},'この中から毎日'+CONFIG.questsPerDay+'つ、きょうの画面に出ます。'));
   D.questPool.forEach((q,qi)=>{
     const inp=el('input',{class:'in',maxlength:'30',value:q,'aria-label':'クエスト'});
     inp.onchange=()=>{ const v=inp.value.trim(); if(v){ D.questPool[qi]=v; save(); } };
@@ -1262,22 +1342,22 @@ function renderSettings(){
     add.onkeydown=e=>{ if(e.key==='Enter') addB.click(); };
     c3.append(el('div',{class:'row'},add,addB));
   }
-  s.append(c3);
+  s2.append(c3);
 
   // 共有
-  const c4=el('div',{class:'card'},el('h3',null,'クライエントさんに わたす'),
-    el('p',{class:'hint'},'いまの 育成メニュー・もくひょう・クエストだけを 入れたリンクを作ります。記録やメモは 入りません。受けとった人は じぶんの端末で じぶん用に そだてられます（メニューも じぶんで変えられます）。'));
+  const c4=el('div',{class:'card'},el('h3',null,'クライエントさんに渡す'),
+    el('p',{class:'hint'},'いまの育成メニュー・目標・セルフハグだけを入れたリンクを作ります。記録やメモは入りません。受け取った人は自分の端末で自分用に育てられます。'));
   const out=el('textarea',{class:'in',readonly:'',hidden:'','aria-label':'共有リンク'});
   c4.append(el('button',{class:'btn primary',onclick:async()=>{
     const url=location.href.split('#')[0]+'#setup='+b64e(JSON.stringify({t:D.title,m:D.goal,g:D.genres.map(g=>({n:g.name,c:g.color,i:g.items.map(i=>i.name)})),q:D.questPool}));
     out.value=url; out.hidden=false;
     try{ await navigator.clipboard.writeText(url); toast('リンクを コピーしました'); }catch(e){ out.select(); toast('下のリンクを コピーしてね'); }
-  }},'この設定の リンクを つくる'),el('div',{style:'height:8px'}),out);
-  s.append(c4);
+  }},'この設定のリンクを作る'),el('div',{style:'height:8px'}),out);
+  s2.append(c4);
 
   // 引っ越し
-  const c5=el('div',{class:'card'},el('h3',null,'記録の ひっこし'),
-    el('p',{class:'hint'},'スマホを かえるときは、まず「書き出す」で ファイルを保存 → 新しいスマホで「読み込む」。'));
+  const c5=el('div',{class:'card'},el('h3',null,'記録の引っ越し'),
+    el('p',{class:'hint'},'スマホを替えるときは、まず「書き出す」でファイルを保存 → 新しいスマホで「読み込む」。'));
   const dump=el('textarea',{class:'in',readonly:'',hidden:'','aria-label':'書き出したデータ'});
   const file=el('input',{type:'file',accept:'.json,application/json',hidden:''});
   const paste=el('textarea',{class:'in',hidden:'',placeholder:'書き出した文字を ここに はりつけ'});
@@ -1294,13 +1374,13 @@ function renderSettings(){
   c5.append(el('p',{class:'hint',style:'margin:8px 0 4px'},'ファイルが保存できないときは、書き出したあと下に出る文字を まるごとコピーして メモに保存してください。'),dump);
   file.onchange=()=>{ const f=file.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>askImport(String(r.result)); r.readAsText(f); file.value=''; };
   c5.append(file,paste,pasteB);
-  s.append(c5);
+  s2.append(c5);
 
   // リセット
-  const c6=el('div',{class:'card'},el('h3',null,'さいしょから'),el('p',{class:'hint'},'記録を ぜんぶ けして、たまごに もどします（育成メニューは のこります）。まえに「書き出す」しておくと 安心。'));
+  const c6=el('div',{class:'card'},el('h3',null,'最初から'),el('p',{class:'hint'},'記録を全部消して、たまごに戻します（育成メニューは残ります）。先に「書き出す」しておくと安心。'));
   const rb=el('button',{class:'btn del'});
-  twoTap(rb,'記録を ぜんぶ けす','もう1回で ぜんぶ けす',()=>{ const keep={title:D.title,pet:D.pet,goal:D.goal,genres:D.genres,questPool:D.questPool}; D=Object.assign(defaults(),keep,{named:true,setup:true}); save(); lastLevel=1; renderAll(); toast('あたらしい たまごが きた'); });
-  c6.append(rb); s.append(c6);
+  twoTap(rb,'記録を全部消す','もう1回で全部消す',()=>{ const keep={title:D.title,pet:D.pet,goal:D.goal,vision:D.vision,genres:D.genres,questPool:D.questPool}; D=Object.assign(defaults(),keep,{named:true,setup:true}); save(); lastLevel=1; renderAll(); toast('あたらしい たまごが きた'); });
+  c6.append(rb); s2.append(c6);
 }
 function askImport(text){
   let d=null; try{ d=normalize(JSON.parse(text)); }catch(e){}
@@ -1334,11 +1414,16 @@ setInterval(()=>{
 function askName(){
   const inp=el('input',{class:'in',maxlength:'10',value:D.pet,'aria-label':'なまえ'});
   const pic=el('div',{class:'evo'}); pic.innerHTML=petSVG(0,'normal');
-  const box=el('div',null,pic,el('p',null,'たまごを ひろった！ なまえを つけてね。'),inp,
-    el('p',{class:'hint',style:'margin-top:10px'},'じぶんを育てる時間を 記録すると、1分＝1EXP で すこしずつ そだちます。つぎに 育成メニューを 決めよう。'));
-  modal('ようこそ', box, [{label:'つぎへ',primary:true,fn:()=>{ D.pet=inp.value.trim()||'エゴちゃん'; D.named=true; save(); if(!D.setup) showTab('settings'); renderLCD(); }}]);
+  const box=el('div',null,pic,el('p',{style:'margin:0 0 6px;text-align:center'},WELCOME.meaning),el('p',{style:'margin:0 0 6px'},'たまごを ひろった！ なまえを つけてね。'),inp);
+  modal('ようこそ', box, [{label:'つぎへ',primary:true,fn:()=>{ D.pet=inp.value.trim()||'エゴちゃん'; D.named=true; save(); setTimeout(askVision,60); }}]);
 }
-renderAll();
+function askVision(){
+  const inp=el('input',{class:'in',maxlength:'30',value:D.vision,placeholder:WELCOME.goalDefault,'aria-label':'ゴール'});
+  const box=el('div',null,el('p',{style:'margin:0 0 6px'},WELCOME.goalAsk),inp,WELCOME.goalEx?el('p',{class:'hint',style:'margin:8px 0 0'},WELCOME.goalEx):null,
+    el('p',{class:'hint',style:'margin:8px 0 0'},'あとから「せってい」で変えられます。メニューは最初から入っているので、すぐスタートできます。'));
+  modal('ゴールを ひとこと', box, [{label:'はじめる',primary:true,fn:()=>{ D.vision=inp.value.trim().slice(0,30)||WELCOME.goalDefault; D.setup=true; save(); renderAll(); showTab('today'); toast('「'+D.vision+'」へ、いってらっしゃい'); }}]);
+}
+renderAll(); liveFace();
 (function boot(){
   const m=location.hash.match(/^#setup=([A-Za-z0-9_-]+)/);
   if(m){
