@@ -310,6 +310,7 @@ textarea.in{min-height:70px;font-size:.9rem;resize:vertical}
 'use strict';
 // 言葉（育成メニューの初期値・クエスト・セリフ・ボス戦・問い365）は kotoba.js にあります
 const W = window.EGO_KOTOBA || {};
+const QUEST_WHY = {}; ((W.config&&W.config.quests)||[]).forEach(q=>{ if(q&&typeof q==='object'&&q.t) QUEST_WHY[q.t]=q.w||''; });
 const CONFIG = Object.assign({ genres:[], goal:60, xp:{quest:15,boss:50,toi:5}, quests:[], questsPerDay:3, feelings:[], bossSteps:[], bossReplies:{} }, W.config||{});
 
 const $ = s => document.querySelector(s);
@@ -452,9 +453,9 @@ const uid = () => Math.random().toString(36).slice(2,9);
 const str = (v,max) => typeof v==='string' ? v.trim().slice(0,max) : '';
 const esc = s => String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function defaults(){
-  return { v:2, title:'エゴ育成ゲーム', pet:'エゴちゃん', named:false, setup:false, start:todayK(), seen:0, goal:CONFIG.goal, vision:'', visionAt:0, sound:true, typesSeen:[], ui:{}, weekly:{}, notify:{on:false, time:'21:00', last:''},
+  return { v:2, title:'エゴ育成ゲーム', pet:'エゴちゃん', named:false, setup:false, start:todayK(), seen:0, goal:CONFIG.goal, vision:'', visionAt:0, monthGoal:0, sound:true, typesSeen:[], ui:{}, weekly:{}, notify:{on:false, time:'21:00', last:''},
     genres: CONFIG.genres.map(g=>({id:uid(), name:g.name, color:g.color, items:g.items.map(n=>({id:uid(), name:n}))})),
-    questPool: CONFIG.quests.slice(), logs:[], running:null, quests:{}, battles:[], toi:{} };
+    questPool: CONFIG.quests.map(q=>typeof q==='string'?q:q.t).filter(Boolean), logs:[], running:null, quests:{}, battles:[], toi:{} };
 }
 function normalize(o){
   if(!o || typeof o!=='object') return null;
@@ -467,6 +468,7 @@ function normalize(o){
   d.goal=Number.isFinite(o.goal)&&o.goal>=5&&o.goal<=MAX_MIN?Math.round(o.goal):d.goal;
   d.sound=o.sound!==false;
   d.vision=str(o.vision,30);
+  d.monthGoal=Number.isFinite(o.monthGoal)&&o.monthGoal>=0&&o.monthGoal<=300?Math.round(o.monthGoal):0;
   d.visionAt=Number.isFinite(o.visionAt)?o.visionAt:0;
   d.ui=(o.ui&&typeof o.ui==='object')?Object.fromEntries(Object.entries(o.ui).filter(([a,b])=>typeof a==='string'&&typeof b==='boolean').slice(0,20)):{};
   d.typesSeen=Array.isArray(o.typesSeen)?o.typesSeen.map(x=>str(x,20)).filter(Boolean).slice(0,60):[];
@@ -504,6 +506,13 @@ function toiIndex(k){ if(!TOI.length) return -1; const d=parseK(k); const doy=Ma
 function toiOf(k){ const i=toiIndex(k); return i<0?null:Object.assign({i},TOI[i]); }
 const battlesOn = k => D.battles.filter(b=>dk(new Date(b.at))===k).length;
 const totalMin = () => D.logs.reduce((a,l)=>a+l.min,0);
+const monthKey = d => d.getFullYear()+'-'+pad(d.getMonth()+1);
+const monthMin = (mk) => D.logs.filter(l=>monthKey(new Date(l.at))===mk).reduce((a,l)=>a+l.min,0);
+function monthInfo(){
+  const now=new Date(), mk=monthKey(now), last=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
+  const done=monthMin(mk), goal=D.monthGoal*60, left=Math.max(0,goal-done), daysLeft=last-now.getDate()+1;
+  return {mk, done, goal, left, daysLeft, perDay: daysLeft?left/daysLeft:0, label:(now.getMonth()+1)+'月'};
+}
 function totalXP(){
   let x=totalMin();
   for(const k in D.quests) x+=D.quests[k].length*CONFIG.xp.quest;
@@ -831,6 +840,7 @@ function renderToday(){
   const gs=el('div',{class:'gsum',style:'margin-top:6px'});
   D.genres.forEach(g=>{ const mm=logs.filter(l=>l.g===g.id).reduce((a,l)=>a+l.min,0); if(mm) gs.append(el('span',null,el('i',{class:'dot',style:'background:'+hexOf(g.color)}),g.name+' '+fmtMin(mm))); });
   tot.append(gs);
+  if(isToday && D.monthGoal){ const mi=monthInfo(); tot.append(el('div',{class:'goal',style:'margin-top:6px'},mi.left<=0?mi.label+'の目標 '+D.monthGoal+'時間 達成！':mi.label+'：'+fmtShort(mi.done)+' / '+D.monthGoal+'h（1日 '+fmtMin(Math.ceil(mi.perDay))+' で届く）')); }
   const hasItems=D.genres.some(g=>g.items.length);
   if(isToday){
     const tm=el('div',{style:'margin-top:14px;border-top:1px solid var(--line);padding-top:12px'});
@@ -889,7 +899,7 @@ function renderToday(){
           if(a.includes(q)) a.splice(a.indexOf(q),1); else { a.push(q); gain=CONFIG.xp.quest; }
           if(!a.length) delete D.quests[viewDay];
           afterChange(gain); if(gain) beep('tiny'); renderToday();
-        }},el('span',{class:'box'}),el('span',null,q)));
+        }},el('span',{class:'box'}),el('span',null,el('span',{style:'display:block'},q),QUEST_WHY[q]?el('span',{style:'display:block;font-size:.8rem;color:var(--sub);margin-top:2px'},QUEST_WHY[q]):null)));
       });
       s.append(fold('hug','今日のセルフハグ', done.length+'/'+qs.length, box, false));
     }
@@ -1027,6 +1037,14 @@ function renderReview(){
       el('div',{class:'goal'},'「'+D.vision+'」に 向けて'),
       el('div',{class:'big'},fmtMin(mins)),
       el('div',{class:'goal'},'ゴールを決めてから '+days+'日。この時間はぜんぶ、そっちへ進んだ分。')));
+  }
+  if(D.monthGoal){
+    const mi=monthInfo(); const pct=Math.min(100, mi.goal?mi.done/mi.goal*100:0);
+    s.append(el('div',{class:'card total'},
+      el('div',{class:'goal'},mi.label+'の目標 '+D.monthGoal+'時間'),
+      el('div',{class:'big'},fmtShort(mi.done)),
+      el('div',{class:'goalbar'+(pct>=100?' done':'')},el('i',{style:'width:'+pct+'%'})),
+      el('div',{class:'goal'},pct>=100?'達成！ 今月はもう十分。':'あと '+fmtMin(mi.left)+'　残り'+mi.daysLeft+'日（1日 '+fmtMin(Math.ceil(mi.perDay))+'）')));
   }
   const card=el('div',{class:'card'});
   const we=addDays(ws,6);
@@ -1310,8 +1328,10 @@ function renderSettings(){
   const goal=el('select',{class:'in','aria-label':'1日の目標'});
   [15,30,45,60,90,120,180,240].concat([D.goal]).filter((v,i,a)=>a.indexOf(v)===i).sort((a,b)=>a-b).forEach(v=>goal.append(el('option',{value:String(v),selected:v===D.goal?'':false},fmtMin(v))));
   goal.onchange=()=>{ D.goal=+goal.value; save(); renderLCD(); };
+  const mg=el('input',{class:'in',type:'number',inputmode:'numeric',min:'0',max:'300',value:D.monthGoal||'',placeholder:'例：10','aria-label':'月の目標（時間）'});
+  mg.oninput=()=>{ const v=Math.round(+mg.value); D.monthGoal=v>0?Math.min(300,v):0; save(); };
   const snd=el('button',{class:'btn sm'+(D.sound?' primary':''),style:'margin-top:10px','aria-pressed':String(D.sound),onclick:()=>{ D.sound=!D.sound; save(); if(D.sound) beep('small'); renderSettings(); }},D.sound?'♪ ごほうびの音 ON':'♪ ごほうびの音 OFF');
-  c0.append(goal, el('p',{class:'hint',style:'margin:8px 0 0'},'達成するとキャラがぴかぴかになります。'), snd);
+  c0.append(el('label',{class:'f'},'1日'),goal, el('div',{style:'height:8px'}), el('label',{class:'f'},'ひと月（時間）'), mg, el('p',{class:'hint',style:'margin:8px 0 0'},'達成するとキャラがぴかぴかになります。'), snd);
   s.append(c0);
 
   // おしらせ
@@ -1408,7 +1428,7 @@ function renderSettings(){
     el('p',{class:'hint'},'いまの育成メニュー・目標・セルフハグだけを入れたリンクを作ります。記録やメモは入りません。受け取った人は自分の端末で自分用に育てられます。'));
   const out=el('textarea',{class:'in',readonly:'',hidden:'','aria-label':'共有リンク'});
   c4.append(el('button',{class:'btn primary',onclick:async()=>{
-    const url=location.href.split('#')[0]+'#setup='+b64e(JSON.stringify({t:D.title,m:D.goal,g:D.genres.map(g=>({n:g.name,c:g.color,i:g.items.map(i=>i.name)})),q:D.questPool}));
+    const url=location.href.split('#')[0]+'#setup='+b64e(JSON.stringify({t:D.title,m:D.goal,mg:D.monthGoal,g:D.genres.map(g=>({n:g.name,c:g.color,i:g.items.map(i=>i.name)})),q:D.questPool}));
     out.value=url; out.hidden=false;
     try{ await navigator.clipboard.writeText(url); toast('リンクを コピーしました'); }catch(e){ out.select(); toast('下のリンクを コピーしてね'); }
   }},'この設定のリンクを作る'),el('div',{style:'height:8px'}),out);
@@ -1480,7 +1500,20 @@ function askVision(){
   const inp=el('input',{class:'in',maxlength:'30',value:D.vision,placeholder:WELCOME.goalDefault,'aria-label':'ゴール'});
   const box=el('div',null,el('p',{style:'margin:0 0 6px'},WELCOME.goalAsk),inp,WELCOME.goalEx?el('p',{class:'hint',style:'margin:8px 0 0'},WELCOME.goalEx):null,
     el('p',{class:'hint',style:'margin:8px 0 0'},'あとから「せってい」で変えられます。メニューは最初から入っているので、すぐスタートできます。'));
-  modal('ゴールを ひとこと', box, [{label:'はじめる',primary:true,fn:()=>{ D.vision=inp.value.trim().slice(0,30)||WELCOME.goalDefault; D.visionAt=Date.now(); D.setup=true; save(); renderAll(); showTab('today'); toast('「'+D.vision+'」へ、いってらっしゃい'); }}]);
+  modal('ゴールを ひとこと', box, [{label:'つぎへ',primary:true,fn:()=>{ D.vision=inp.value.trim().slice(0,30)||WELCOME.goalDefault; D.visionAt=Date.now(); save(); setTimeout(askMonthGoal,60); }}]);
+}
+function askMonthGoal(){
+  let chosen=D.monthGoal||10;
+  const opts=[5,10,20,30,50,100];
+  const grid=el('div',{class:'quick',style:'grid-template-columns:repeat(3,1fr)'});
+  const custom=el('input',{class:'in',type:'number',inputmode:'numeric',min:'1',max:'300',placeholder:'じぶんで決める（時間）','aria-label':'月の目標（時間）',style:'margin-top:8px'});
+  const paint=()=>{ [...grid.children].forEach(b=>{ b.style.background=+b.dataset.v===chosen?'var(--gold)':''; b.style.fontWeight=+b.dataset.v===chosen?'900':''; }); };
+  opts.forEach(v=>grid.append(el('button',{'data-v':String(v),onclick:()=>{ chosen=v; custom.value=''; paint(); }},v+'時間')));
+  custom.oninput=()=>{ const v=Math.round(+custom.value); if(v>0){ chosen=Math.min(300,v); paint(); } };
+  paint();
+  const box=el('div',null,el('p',{style:'margin:0 0 8px'},'ひと月に、どれくらい 自分を育てる？'),grid,custom,
+    el('p',{class:'hint',style:'margin:8px 0 0'},'目安：10時間＝1日20分。あとから「設定」で変えられます。'));
+  modal('月の目標', box, [{label:'はじめる',primary:true,fn:()=>{ D.monthGoal=chosen; D.setup=true; save(); renderAll(); showTab('today'); toast('「'+D.vision+'」へ、いってらっしゃい'); }}]);
 }
 renderAll(); liveFace();
 (function boot(){
@@ -1494,6 +1527,7 @@ renderAll(); liveFace();
         [{label:'やめる',fn:()=>{ if(!D.named) setTimeout(askName,50); }},{label:'この設定にする',primary:true,fn:()=>{
           D.title=str(p.t,24)||D.title;
           if(Number.isFinite(p.m)&&p.m>=5&&p.m<=MAX_MIN) D.goal=Math.round(p.m);
+          if(Number.isFinite(p.mg)&&p.mg>0&&p.mg<=300) D.monthGoal=Math.round(p.mg);
           D.genres=p.g.slice(0,MAX_GENRES).map(g=>({id:uid(),name:str(g.n,12)||'ジャンル',color:PALETTE.some(x=>x.id===g.c)?g.c:'rose',items:(Array.isArray(g.i)?g.i:[]).slice(0,MAX_ITEMS).map(n=>({id:uid(),name:str(n,20)})).filter(i=>i.name)}));
           if(Array.isArray(p.q)){ const q=p.q.map(x=>str(x,30)).filter(Boolean).slice(0,MAX_QUESTS); if(q.length) D.questPool=q; }
           D.setup=true; save(); renderAll(); if(!D.named) setTimeout(askName,50);
