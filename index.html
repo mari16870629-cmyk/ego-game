@@ -237,6 +237,9 @@ textarea.in{min-height:70px;font-size:.9rem;resize:vertical}
 .cmds.grid{display:grid;grid-template-columns:1fr 1fr}
 .breath{width:70px;height:70px;border-radius:50%;border:3px solid #FFE08A;margin:4px auto 8px;animation:breath 8s ease-in-out infinite}
 @keyframes breath{0%,100%{transform:scale(.6)}50%{transform:scale(1)}}
+.scorerow{display:grid;grid-template-columns:repeat(11,1fr);gap:4px;margin-top:4px}
+.scorebtn{background:#000;color:#fff;border:2px solid #fff;border-radius:6px;padding:8px 0;font-family:var(--pixel);font-size:.95rem;cursor:pointer;min-height:40px}
+.scorebtn:hover,.scorebtn:focus-visible{background:#fff;color:#000;outline:none}
 .bin{width:100%;background:#000;color:#fff;border:2px solid #fff;border-radius:6px;padding:8px;font-family:var(--pixel);font-size:.95rem;min-height:70px;resize:vertical}
 
 @media (prefers-reduced-motion:reduce){
@@ -448,7 +451,7 @@ const uid = () => Math.random().toString(36).slice(2,9);
 const str = (v,max) => typeof v==='string' ? v.trim().slice(0,max) : '';
 const esc = s => String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function defaults(){
-  return { v:2, title:'エゴ育成ゲーム', pet:'エゴちゃん', named:false, setup:false, start:todayK(), seen:0, goal:CONFIG.goal, vision:'', sound:true, typesSeen:[], ui:{}, weekly:{}, notify:{on:false, time:'21:00', last:''},
+  return { v:2, title:'エゴ育成ゲーム', pet:'エゴちゃん', named:false, setup:false, start:todayK(), seen:0, goal:CONFIG.goal, vision:'', visionAt:0, sound:true, typesSeen:[], ui:{}, weekly:{}, notify:{on:false, time:'21:00', last:''},
     genres: CONFIG.genres.map(g=>({id:uid(), name:g.name, color:g.color, items:g.items.map(n=>({id:uid(), name:n}))})),
     questPool: CONFIG.quests.slice(), logs:[], running:null, quests:{}, battles:[], toi:{} };
 }
@@ -463,6 +466,7 @@ function normalize(o){
   d.goal=Number.isFinite(o.goal)&&o.goal>=5&&o.goal<=MAX_MIN?Math.round(o.goal):d.goal;
   d.sound=o.sound!==false;
   d.vision=str(o.vision,30);
+  d.visionAt=Number.isFinite(o.visionAt)?o.visionAt:0;
   d.ui=(o.ui&&typeof o.ui==='object')?Object.fromEntries(Object.entries(o.ui).filter(([a,b])=>typeof a==='string'&&typeof b==='boolean').slice(0,20)):{};
   d.typesSeen=Array.isArray(o.typesSeen)?o.typesSeen.map(x=>str(x,20)).filter(Boolean).slice(0,60):[];
   d.weekly={};
@@ -480,7 +484,7 @@ function normalize(o){
   if(o.quests && typeof o.quests==='object') for(const k in o.quests){ const v=o.quests[k]; if(okK(k)&&Array.isArray(v)){ const a=v.map(q=>str(q,30)).filter(Boolean); if(a.length) d.quests[k]=a; } }
   d.toi={};
   if(o.toi && typeof o.toi==='object') for(const k in o.toi){ const v=o.toi[k]; if(okK(k)&&v&&typeof v==='object'&&Number.isInteger(v.i)){ const t=str(v.text,400); if(t||v.mark) d.toi[k]={i:v.i, q:str(v.q,60), text:t, mark:!!v.mark}; } }
-  d.battles=Array.isArray(o.battles)?o.battles.filter(b=>b&&typeof b.at==='number').map(b=>({at:b.at, mon:str(b.mon,20), feel:str(b.feel,12), memo:str(b.memo,400), ans:Array.isArray(b.ans)?b.ans.map(a=>str(a,30)):[]})):[];
+  d.battles=Array.isArray(o.battles)?o.battles.filter(b=>b&&typeof b.at==='number').map(b=>({at:b.at, mon:str(b.mon,20), feel:str(b.feel,12), memo:str(b.memo,400), ans:Array.isArray(b.ans)?b.ans.map(a=>str(a,30)):[], scores:Array.isArray(b.scores)?b.scores.filter(n=>Number.isInteger(n)&&n>=0&&n<=10).slice(0,20):[]})):[];
   return d;
 }
 function loadData(){ try{ const s=localStorage.getItem(KEY); if(s) return normalize(JSON.parse(s)); }catch(e){} return null; }
@@ -746,7 +750,8 @@ function renderLCD(){
   const nd=$('#nudge'); nd.innerHTML='';
   if(m==='grumpy' && !D.running){
     const last=D.logs.length?D.logs[D.logs.length-1]:null; const it=last&&findItem(last.g,last.i) || (D.genres.find(g=>g.items.length)&&{g:D.genres.find(g=>g.items.length),it:D.genres.find(g=>g.items.length).items[0]});
-    if(it) nd.append(el('button',{class:'nudgebtn',onclick:()=>{ D.running={at:Date.now(),g:it.g.id,i:it.it.id,n:it.it.name}; save(); showTab('today'); renderLCD(); timerNotify(); toast('5分だけ。それで じゅうぶん'); }},'5分だけ「'+it.it.name+'」→ 機嫌なおる'));
+    if(it) nd.append(el('button',{class:'nudgebtn',onclick:()=>{ D.running={at:Date.now(),g:it.g.id,i:it.it.id,n:it.it.name}; save(); showTab('today'); renderLCD(); timerNotify(); toast('5分だけ。それで じゅうぶん'); }},'5分だけ「'+it.it.name+'」を やってみる'),
+      el('span',{class:'mini',style:'display:block;margin:4px 0 0'},'5分やると、'+D.pet+'の 機嫌が なおります'));
   } else if(m==='happy' && !D.running){
     nd.append(el('span',{class:'mini',style:'display:block;margin:0'},'今日はもう十分。あとは休んでいい。'));
   }
@@ -839,7 +844,7 @@ function renderToday(){
       tm.append(el('p',{class:'hint',style:'text-align:left'},'何を育てる？ 選んでスタート'),menuChips(renderToday));
       const sel=selected && findItem(selected.g,selected.i);
       tm.append(el('button',{class:'bigbtn',disabled:sel?false:'',onclick:()=>{ if(!sel) return; D.running={at:Date.now(),g:sel.g.id,i:sel.it.id,n:sel.it.name}; save(); renderLCD(); renderToday(); timerNotify(); }},
-        sel?'「'+sel.it.name+'」をスタート':'メニューを選んでね'));
+        sel?'成長ゲームスタート（'+sel.it.name+'）':'メニューを選んでね'));
     }
     tot.append(tm);
   }
@@ -1010,6 +1015,15 @@ function renderReview(){
   const weekLogs=keys.map(logsOn);
   const sums=weekLogs.map(ls=>ls.reduce((a,l)=>a+l.min,0));
   const max=Math.max(D.goal,...sums), tk=todayK();
+  if(D.vision){
+    const since=D.visionAt||parseK(D.start).getTime();
+    const mins=D.logs.filter(l=>l.at>=since).reduce((a,l)=>a+l.min,0);
+    const days=Math.max(1,Math.round((Date.now()-since)/864e5));
+    s.append(el('div',{class:'card total',style:'border-left:4px solid var(--gold)'},
+      el('div',{class:'goal'},'「'+D.vision+'」に 向けて'),
+      el('div',{class:'big'},fmtMin(mins)),
+      el('div',{class:'goal'},'ゴールを決めてから '+days+'日。この時間はぜんぶ、そっちへ進んだ分。')));
+  }
   const card=el('div',{class:'card'});
   const we=addDays(ws,6);
   card.append(el('div',{class:'datenav'},
@@ -1120,10 +1134,13 @@ function renderQuest(){
   const intro=el('div',{class:'card',style:'text-align:center'},
     el('p',{style:'margin:0 0 6px;font-weight:700'},(W.room&&W.room.title)||'イヤなことが あった日に 開く部屋'),
     el('p',{class:'hint',style:'margin:0'},(W.room&&W.room.lead)||(D.pet+'と いっしょに 夢の中へ。モンスター（イヤな気持ち）に 5つの といで こたえると、気持ちが すこし整理されます。')));
+  const R=W.room||{};
+  if(R.sedonaUrl) intro.append(el('p',{style:'margin:8px 0 0;font-size:.84rem'},el('a',{href:R.sedonaUrl,target:'_blank',rel:'noopener',style:'color:#9C4D6E'},R.sedonaLabel||'セドナメソッドについて知りたい方はこちら →')));
+  if(R.dmUrl) intro.append(el('p',{style:'margin:6px 0 0;font-size:.84rem'},el('a',{href:R.dmUrl,target:'_blank',rel:'noopener',style:'color:#9C4D6E'},R.dmLabel||'一人で向き合うのがつらかったら、まりへDMしてね →')));
   s.append(intro);
   s.append(el('button',{class:'btn sm',style:'display:block;margin:-4px auto 12px',onclick:()=>showTab('today')},'← きょうに戻る'));
   const b=el('button',{class:'bossbtn',onclick:startBattle});
-  b.innerHTML=monSVG('#B49AE0')+'<span><b>夢の中へ（ボスせん）</b><small>'+CONFIG.xp.boss+'EXP。とちゅうで「にげる」も OK</small></span>';
+  b.innerHTML=monSVG('#B49AE0')+'<span><b>手放しの旅へ（ボスせん）</b><small>どんな感情？→認める？→手放す？→今何点？ '+CONFIG.xp.boss+'EXP。とちゅうで「にげる」もOK</small></span>';
   s.append(b);
   const c4=el('div',{class:'card'},el('h3',null,'たたかいの記録'));
   if(!D.battles.length) c4.append(el('p',{class:'hint',style:'margin:0'},'まだ ありません。'));
@@ -1133,7 +1150,7 @@ function renderQuest(){
     twoTap(del,'けす','もう1回で けす',()=>{ D.battles=D.battles.filter(x=>x!==bt); afterChange(0); renderQuest(); });
     ul.append(el('li',null,el('div',{class:'top'},el('span',{class:'meta'},(d.getMonth()+1)+'/'+d.getDate()+' '+pad(d.getHours())+':'+pad(d.getMinutes())+'　'+bt.mon+'（'+bt.feel+'）'),del),
       bt.memo?el('div',{class:'memo'},bt.memo):null,
-      el('div',{class:'meta',style:'margin-top:2px'},bt.ans.join(' → '))));
+      el('div',{class:'meta',style:'margin-top:2px'},(bt.scores&&bt.scores.length?bt.scores.join('点 → ')+'点　':'')+bt.ans.join(' → '))));
   });
   c4.append(ul); s.append(c4);
 }
@@ -1161,12 +1178,26 @@ function cmds(list, grid, pre){
 function meBox(){ $('#bMe').innerHTML=`わたし Lv.${levelOf(totalXP())}<br>HP ${B.hp}/${B.maxHp}`; }
 function monHP(){ $('#mhp i').style.width=Math.max(0,B.mhp)+'%'; }
 async function startBattle(){
-  B={hp:6,maxHp:30,mhp:100,ans:[],memo:'',feel:'',mon:'',fled:false};
+  B={hp:6,maxHp:30,mhp:100,ans:[],scores:[],memo:'',feel:'',mon:'',fled:false};
+  const R=W.room||{}, SD=Object.assign({
+    ack:'その きもちが いま ここに あること、\nみとめられる？（いい・わるい は つけなくていい）',
+    can:'その きもちを 手放せる？',
+    will:'手放す？',
+    when:'いつ？',
+    score:'いま、その きもちは 何点？\n（0＝もう平気　10＝いちばん強い）',
+    again:'また 手放す？',
+    ackReply:{'はい':'みとめた。それだけで すこし ゆるむ','いいえ':'みとめられない、と みとめた。それも OK','わからない':'わからないまま でいい'},
+    canReply:{'はい':'にぎっていた てが ひらく','いいえ':'いまは にぎっていて いい。それも こたえ','たぶん':'てのひらが すこし ひらいた'},
+    willReply:{'はい':'手放すと きめた！','いいえ':'まだ もっていたい。それも たいせつな こたえ'},
+    whenReply:{'いま':'かいしんの いちげき！！','あとで':'じぶんの ペースで いい'},
+    done:'きもちは かるくなった。\nきょうの 手放しは ここまで。',
+    enough:'ここまでで じゅうぶん。\nぜんぶ 手放さなくて いい。'
+  }, R.sedona||{});
   $('#battle').hidden=false; document.body.style.overflow='hidden';
   $('#monster').className='monster'; $('#monster').innerHTML=''; $('#mname').textContent=''; $('#mhp').hidden=true;
   meBox();
   $('#bRun').onclick=flee; $('#bRun').hidden=false;
-  await say('つらすぎる ときは 右上の「にげる」で いつでも おわれます。\nふかい きずは ひとりで たたかわず、専門家や しんらいできる人と。');
+  await say((R.safety||'つらすぎる ときは 右上の「にげる」で いつでも おわれます。\n一人で 向き合うのが つらかったら、まりへ DMしてね。'));
   await cmds(['わかった']);
   if(B.fled) return;
   await say('なにが あった？\n（かかなくても OK。この端末だけに のこります）');
@@ -1177,59 +1208,79 @@ async function startBattle(){
   if(B.fled) return;
   $('#cmds').innerHTML='';
   B.memo=ta.value.trim().slice(0,400);
-  await say('いまの きもちに いちばん ちかいのは？');
+  // ① どんな感情？
+  await say('いま、どんな きもち？');
   const f=await cmds(CONFIG.feelings.map(x=>({label:x.label,v:x})),true);
   if(B.fled) return;
-  B.feel=f.v.label; B.mon=f.v.mon;
-  $('#monster').innerHTML=monSVG(f.v.color); $('#mname').textContent=B.mon; $('#mhp').hidden=false; monHP();
-  await say(B.mon+' が あらわれた！');
-  await cmds(['▼']);
-  if(B.fled) return;
-  await say('わたしは すこし きずついている。\nまずは ホイミで じぶんを まもろう。');
-  await cmds(['ホイミ（しんこきゅう）']);
-  if(B.fled) return;
+  B.feel=f.v.label; B.mon=f.v.mon; B.ans.push(f.v.label);
+  $('#monster').innerHTML=monSVG(f.v.color); $('#mname').textContent=B.mon; $('#mhp').hidden=false;
+  // 最初の点数
+  await say(B.mon+' が あらわれた！\n'+SD.score);
+  let score=await scorePick(); if(B.fled) return;
+  B.scores.push(score); B.mhp=Math.max(5,score*10); monHP();
+  // ホイミ（呼吸）
+  await say('まずは ホイミで じぶんを まもろう。');
+  await cmds(['ホイミ（しんこきゅう）']); if(B.fled) return;
   for(let i=1;i<=3;i++){
-    const ring=el('div',{class:'breath'});
-    $('#cmds').innerHTML=''; $('#cmds').append(ring);
+    const ring=el('div',{class:'breath'}); $('#cmds').innerHTML=''; $('#cmds').append(ring);
     await say(`すって… はいて…（${i}/3）\nわっかに あわせて ゆっくり`);
-    await cmds([i<3?'すった・はいた':'さいごの ひと呼吸'], false, ring);
-    if(B.fled) return;
+    await cmds([i<3?'すった・はいた':'さいごの ひと呼吸'], false, ring); if(B.fled) return;
     B.hp=Math.min(B.maxHp,B.hp+8); meBox();
   }
   B.hp=B.maxHp; meBox();
-  await say('HPが かいふくした！\nさあ、たたかおう。');
-  const steps=CONFIG.bossSteps;
-  for(let si=0; si<steps.length; si++){
-    const st=steps[si];
-    await cmds(['たたかう']);
-    if(B.fled) return;
-    await say(st.q);
-    const a=await cmds(st.choices);
-    if(B.fled) return;
-    B.ans.push(a);
-    const last=si===steps.length-1, crit=a==='いま';
-    const dmg=last? B.mhp : Math.min(B.mhp-5, Math.round(100/steps.length*(crit?1.4:1)));
-    B.mhp-=dmg;
-    const m=$('#monster'); m.classList.add('flash','shake'); setTimeout(()=>m.classList.remove('flash','shake'),400);
-    const dn=el('div',{class:'dmg'},String(dmg)); $('#field').append(dn); setTimeout(()=>dn.remove(),950);
-    monHP();
-    const reply=CONFIG.bossReplies[a];
-    await say((reply?reply+'\n':'「'+a+'」を えらんだ！\n')+B.mon+'に '+dmg+'の ダメージ！');
+  // ② セドナの輪：みとめる → 手放せる？ → 手放す？ → いつ？ → 何点？ → また手放す？
+  let round=0;
+  while(true){
+    round++;
+    await cmds(['たたかう']); if(B.fled) return;
+    if(round===1){
+      await say(SD.ack); const a1=await cmds(['はい','いいえ','わからない']); if(B.fled) return; B.ans.push('みとめる:'+a1); hit(8);
+      await say(SD.ackReply[a1]||a1);
+    }
+    await say(SD.can); const a2=await cmds(['はい','いいえ','たぶん']); if(B.fled) return; B.ans.push('手放せる:'+a2); hit(a2==='はい'?15:8);
+    await say(SD.canReply[a2]||a2);
+    await say(SD.will); const a3=await cmds(['はい','いいえ']); if(B.fled) return; B.ans.push('手放す:'+a3); hit(a3==='はい'?15:6);
+    await say(SD.willReply[a3]||a3);
+    if(a3==='はい'){
+      await say(SD.when); const a4=await cmds(['いま','あとで']); if(B.fled) return; B.ans.push('いつ:'+a4); hit(a4==='いま'?25:8);
+      await say(SD.whenReply[a4]||a4);
+    }
+    await say(SD.score); const sc=await scorePick(); if(B.fled) return;
+    B.scores.push(sc);
+    const prev=score; score=sc; B.mhp=Math.max(0,score*10); monHP();
+    if(score<prev){ const m=$('#monster'); m.classList.add('flash','shake'); setTimeout(()=>m.classList.remove('flash','shake'),400); }
+    await say(prev>score ? (prev-score)+'点 かるくなった！（'+prev+'→'+score+'）' : prev===score ? 'まだ '+score+'点。それも 正直な こたえ' : score+'点。ふえても だいじょうぶ。感じきる とちゅう');
+    if(score<=2 || round>=5){ break; }
+    await say(SD.again); const a5=await cmds(['はい','きょうは ここまで']); if(B.fled) return;
+    if(a5!=='はい'){ await say(SD.enough); break; }
   }
+  // おわり
   $('#bRun').hidden=true;
-  $('#monster').classList.add('gone');
-  for(let i=0;i<5;i++){ const b=el('div',{class:'lightball',style:`left:${30+i*10}%;top:45%;animation-delay:${i*.15}s`}); $('#field').append(b); setTimeout(()=>b.remove(),2400); }
-  await say(B.mon+'は ひかりの つぶに なった！');
+  if(score<=2){
+    $('#monster').classList.add('gone');
+    for(let i=0;i<5;i++){ const bb=el('div',{class:'lightball',style:`left:${30+i*10}%;top:45%;animation-delay:${i*.15}s`}); $('#field').append(bb); setTimeout(()=>bb.remove(),2400); }
+    await say(B.mon+'は ひかりの つぶに なった！\n'+SD.done);
+  } else {
+    await say(B.mon+'は すこし 小さくなった。\n（'+B.scores[0]+'点 → '+score+'点）');
+  }
   await cmds(['▼']);
-  D.battles.push({at:Date.now(), mon:B.mon, feel:B.feel, memo:B.memo, ans:B.ans}); save();
+  D.battles.push({at:Date.now(), mon:B.mon, feel:B.feel, memo:B.memo, ans:B.ans, scores:B.scores}); save();
   const before=levelOf(totalXP()-CONFIG.xp.boss), after=levelOf(totalXP());
   await say('けいけんち '+CONFIG.xp.boss+'ポイント かくとく！'+(after>before?'\nレベルが '+after+'に あがった！':''));
   await cmds(['▼']);
   await say('けっかは どうでも いい。\nそれでも わたしは、じぶんの ために うごけた。');
-  await cmds(['▼']);
-  await say('さいごに えらんだ「'+B.ans[B.ans.length-1]+'」、\nできそうなら いま やってみよう。');
   await cmds(['へやに もどる']);
   endBattle(true);
+
+  function hit(n){ const d=Math.min(B.mhp,n); if(!d) return; B.mhp-=d; monHP(); const m=$('#monster'); m.classList.add('flash','shake'); setTimeout(()=>m.classList.remove('flash','shake'),400); const dn=el('div',{class:'dmg'},String(d)); $('#field').append(dn); setTimeout(()=>dn.remove(),950); }
+}
+async function scorePick(){
+  const c=$('#cmds'); c.innerHTML=''; c.className='cmds';
+  return new Promise(res=>{
+    const row=el('div',{class:'scorerow'});
+    for(let i=0;i<=10;i++) row.append(el('button',{class:'scorebtn',onclick:()=>{ c.innerHTML=''; res(i); }},String(i)));
+    c.append(row, el('p',{class:'small',style:'margin:6px 0 0;text-align:center'},'0 ＝ もう平気　　10 ＝ いちばん強い'));
+  });
 }
 function flee(){
   if(!B || B.fled) return;
@@ -1323,7 +1374,7 @@ function renderSettings(){
   const ttl=el('input',{class:'in',maxlength:'24',value:D.title,'aria-label':'ゲームのタイトル'});
   ttl.oninput=()=>{ D.title=ttl.value.trim()||'エゴ育成ゲーム'; save(); renderLCD(); };
   const vis=el('input',{class:'in',maxlength:'30',value:D.vision,placeholder:WELCOME.goalDefault,'aria-label':'ゴール'});
-  vis.oninput=()=>{ D.vision=vis.value.trim().slice(0,30); save(); renderLCD(); };
+  vis.oninput=()=>{ D.vision=vis.value.trim().slice(0,30); if(!D.visionAt) D.visionAt=Date.now(); save(); renderLCD(); };
   c1.append(el('label',{class:'f'},'ゴール（なりたい私・ひとこと）'),vis,el('div',{style:'height:8px'}),el('label',{class:'f'},'キャラの名前'),pet,el('div',{style:'height:8px'}),el('label',{class:'f'},'ゲームのタイトル（本体の上に出ます）'),ttl);
   s2.append(c1);
 
@@ -1421,7 +1472,7 @@ function askVision(){
   const inp=el('input',{class:'in',maxlength:'30',value:D.vision,placeholder:WELCOME.goalDefault,'aria-label':'ゴール'});
   const box=el('div',null,el('p',{style:'margin:0 0 6px'},WELCOME.goalAsk),inp,WELCOME.goalEx?el('p',{class:'hint',style:'margin:8px 0 0'},WELCOME.goalEx):null,
     el('p',{class:'hint',style:'margin:8px 0 0'},'あとから「せってい」で変えられます。メニューは最初から入っているので、すぐスタートできます。'));
-  modal('ゴールを ひとこと', box, [{label:'はじめる',primary:true,fn:()=>{ D.vision=inp.value.trim().slice(0,30)||WELCOME.goalDefault; D.setup=true; save(); renderAll(); showTab('today'); toast('「'+D.vision+'」へ、いってらっしゃい'); }}]);
+  modal('ゴールを ひとこと', box, [{label:'はじめる',primary:true,fn:()=>{ D.vision=inp.value.trim().slice(0,30)||WELCOME.goalDefault; D.visionAt=Date.now(); D.setup=true; save(); renderAll(); showTab('today'); toast('「'+D.vision+'」へ、いってらっしゃい'); }}]);
 }
 renderAll(); liveFace();
 (function boot(){
