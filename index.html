@@ -319,7 +319,7 @@ const PALETTE = [
   {id:'rose',hex:'#F59BB0'},{id:'peach',hex:'#F6B07C'},{id:'honey',hex:'#E8C25A'},
   {id:'mint',hex:'#7CCAA2'},{id:'sky',hex:'#86B7E6'},{id:'lilac',hex:'#B59AE6'}];
 const hexOf = id => (PALETTE.find(p=>p.id===id)||PALETTE[0]).hex;
-const MAX_GENRES = 6, MAX_ITEMS = 12, MAX_QUESTS = 40, MAX_MIN = 720;
+const MAX_GENRES = 6, MAX_ITEMS = 12, MAX_QUESTS = 120, MAX_MIN = 720;
 
 // ---------- 成長段階（育成時間＝経験値で進化） ----------
 const STAGES = [
@@ -479,6 +479,9 @@ function normalize(o){
     id:str(g.id,20)||uid(), name:str(g.name,12)||'ジャンル', color:PALETTE.some(p=>p.id===g.color)?g.color:'rose',
     items:(Array.isArray(g.items)?g.items:[]).filter(i=>i&&typeof i==='object').slice(0,MAX_ITEMS).map(i=>({id:str(i.id,20)||uid(), name:str(i.name,20)||'メニュー'}))}));
   if(Array.isArray(o.questPool)) d.questPool=o.questPool.map(q=>str(q,30)).filter(Boolean).slice(0,MAX_QUESTS);
+  // 旧の初期リスト（20本）のままなら、新しいリストに入れ替える
+  const OLD_Q=["空を10秒みあげる", "コップ1ぱいの水をのむ", "じぶんを1つほめる", "「ありがとう」を1回いう", "ゆっくり3回しんこきゅう", "すきな香りをかぐ", "1つだけ物をてばなす", "5分ストレッチ", "きょうの「よかった」を1つ書く", "鏡のじぶんにわらいかける", "スマホを15分はなす", "机の上を1分だけととのえる", "あたたかい飲みものをゆっくりのむ", "すきな曲を1曲きく", "だれかにやさしい言葉をかける", "いつもより15分はやくねる", "外の空気をすいに出る", "1食だけていねいに味わう", "「私はよくやってる」と声に出す", "叶う理由を3つ数える"];
+  if(d.questPool.length===OLD_Q.length && d.questPool.every(q=>OLD_Q.includes(q))) d.questPool=defaults().questPool;
   d.logs=Array.isArray(o.logs)?o.logs.filter(l=>l&&Number.isFinite(l.at)&&Number.isFinite(l.min)&&l.min>0).map(l=>({
     id:str(l.id,20)||uid(), at:l.at, min:Math.min(MAX_MIN,Math.round(l.min)), g:str(l.g,20), i:str(l.i,20), n:str(l.n,20)||'メニュー', memo:str(l.memo,300)})):[];
   if(o.running && Number.isFinite(o.running.at)) d.running={at:o.running.at, g:str(o.running.g,20), i:str(o.running.i,20), n:str(o.running.n,20), paused:Number.isFinite(o.running.paused)?o.running.paused:null, pausedTotal:Number.isFinite(o.running.pausedTotal)?o.running.pausedTotal:0};
