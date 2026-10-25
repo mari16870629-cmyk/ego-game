@@ -1,6 +1,6 @@
 // エゴ育成ゲーム：電波がなくても開ける＋通知を出す仕組み（Service Worker）
 // 中身を更新したら CACHE の番号を1つ上げる
-const CACHE = 'ego-game-v15';
+const CACHE = 'ego-game-v16';
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './kotoba.js', './icon-192.png', './icon-512.png'];
 const CFG = 'ego-game-config';   // おしらせ設定の控え（ページが閉じていても読める場所）
 
@@ -40,14 +40,24 @@ const todayK = () => { const d = new Date(); return d.getFullYear() + '-' + pad(
 
 self.addEventListener('message', e => {
   const d = e.data || {};
-  if (d.type === 'remind-config') setCfg({ on: !!d.on, time: d.time || '21:00', last: d.last || '', q: d.q || '' });
+  if (d.type === 'remind-config') setCfg({ on: !!d.on, time: d.time || '21:00', last: d.last || '', q: d.q || '', amOn: !!d.amOn, amTime: d.amTime || '07:30', amLast: d.amLast || '', amTitle: d.amTitle || '', amBody: d.amBody || '' });
 });
 
 // ページが閉じていても、端末が許すタイミングで呼ばれる（Android Chrome・ホーム画面追加時。時刻ぴったりではない）
 self.addEventListener('periodicsync', e => { if (e.tag === 'daily-remind') e.waitUntil(remindIfDue()); });
 async function remindIfDue() {
-  const cfg = await getCfg(); if (!cfg || !cfg.on) return;
-  const k = todayK(); if (cfg.last === k) return;
+  const cfg = await getCfg(); if (!cfg) return;
+  const k = todayK();
+  if (cfg.amOn && cfg.amLast !== k) {
+    const [ah, am] = (cfg.amTime || '07:30').split(':').map(Number); const n0 = new Date(); const cur = n0.getHours() * 60 + n0.getMinutes();
+    if (cur >= ah * 60 + am && n0.getHours() < 12) {
+      await self.registration.showNotification(cfg.amTitle || '今日、意識すること', { body: cfg.amBody || '', tag: 'morning', icon: 'icon-192.png', badge: 'icon-192.png', lang: 'ja', data: { open: 'today' } });
+      cfg.amLast = k; await setCfg(cfg);
+      const cs0 = await self.clients.matchAll({ type: 'window' }); cs0.forEach(c => c.postMessage({ type: 'reminded-am', date: k }));
+    }
+  }
+  if (!cfg.on) return;
+  if (cfg.last === k) return;
   const [h, m] = cfg.time.split(':').map(Number); const now = new Date();
   if (now.getHours() * 60 + now.getMinutes() < h * 60 + m) return;
   await self.registration.showNotification('きょうの問い', { body: cfg.q || 'きょうも すこしだけ、じぶんを そだてよう', tag: 'daily', icon: 'icon-192.png', badge: 'icon-192.png', lang: 'ja', data: { open: 'today' } });

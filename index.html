@@ -453,7 +453,7 @@ const uid = () => Math.random().toString(36).slice(2,9);
 const str = (v,max) => typeof v==='string' ? v.trim().slice(0,max) : '';
 const esc = s => String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function defaults(){
-  return { v:2, title:'エゴ育成ゲーム', pet:'エゴちゃん', named:false, setup:false, start:todayK(), seen:0, goal:CONFIG.goal, vision:'', visionAt:0, monthGoal:0, sound:true, typesSeen:[], ui:{}, weekly:{}, notify:{on:false, time:'21:00', last:''},
+  return { v:2, title:'エゴ育成ゲーム', pet:'エゴちゃん', named:false, setup:false, start:todayK(), seen:0, goal:CONFIG.goal, vision:'', visionAt:0, monthGoal:0, sound:true, typesSeen:[], ui:{}, weekly:{}, notify:{on:false, time:'21:00', last:'', amOn:false, amTime:'07:30', amLast:''}, charmOn:true, charmCycle:'month', charm:{}, charmFocus:{}, charmNote:{},
     genres: CONFIG.genres.map(g=>({id:uid(), name:g.name, color:g.color, items:g.items.map(n=>({id:uid(), name:n}))})),
     questPool: CONFIG.quests.map(q=>typeof q==='string'?q:q.t).filter(Boolean), logs:[], running:null, quests:{}, battles:[], toi:{} };
 }
@@ -474,7 +474,13 @@ function normalize(o){
   d.typesSeen=Array.isArray(o.typesSeen)?o.typesSeen.map(x=>str(x,20)).filter(Boolean).slice(0,60):[];
   d.weekly={};
   if(o.weekly&&typeof o.weekly==='object') for(const k in o.weekly){ const v=o.weekly[k]; if(okK(k)&&v&&typeof v==='object'){ d.weekly[k]={pick:str(v.pick,20), memo:str(v.memo,300)}; } }
-  if(o.notify&&typeof o.notify==='object') d.notify={on:!!o.notify.on, time:/^\d{2}:\d{2}$/.test(o.notify.time)?o.notify.time:'21:00', last:str(o.notify.last,10)};
+  if(o.notify&&typeof o.notify==='object') d.notify={on:!!o.notify.on, time:/^\d{2}:\d{2}$/.test(o.notify.time)?o.notify.time:'21:00', last:str(o.notify.last,10), amOn:!!o.notify.amOn, amTime:/^\d{2}:\d{2}$/.test(o.notify.amTime)?o.notify.amTime:'07:30', amLast:str(o.notify.amLast,10)};
+  d.charmOn=o.charmOn!==false; d.charmCycle=o.charmCycle==='week'?'week':'month';
+  const okI=a=>Array.isArray(a)?[...new Set(a.filter(n=>Number.isInteger(n)&&n>=0&&n<200))]:[];
+  d.charm={}; d.charmFocus={}; d.charmNote={};
+  if(o.charm&&typeof o.charm==='object') for(const kk in o.charm){ if(/^\d{4}-\d{2}-\d{2}$/.test(kk)){ const a=okI(o.charm[kk]); if(a.length) d.charm[kk]=a; } }
+  if(o.charmFocus&&typeof o.charmFocus==='object') for(const kk in o.charmFocus){ if(/^\d{4}-\d{2}-\d{2}$/.test(kk)){ const a=okI(o.charmFocus[kk]); if(a.length) d.charmFocus[kk]=a; } }
+  if(o.charmNote&&typeof o.charmNote==='object') for(const kk in o.charmNote){ if(/^\d{4}-\d{2}-\d{2}$/.test(kk)){ const t=str(o.charmNote[kk],60); if(t) d.charmNote[kk]=t; } }
   d.genres=o.genres.filter(g=>g&&typeof g==='object').slice(0,MAX_GENRES).map(g=>({
     id:str(g.id,20)||uid(), name:str(g.name,12)||'ジャンル', color:PALETTE.some(p=>p.id===g.color)?g.color:'rose',
     items:(Array.isArray(g.items)?g.items:[]).filter(i=>i&&typeof i==='object').slice(0,MAX_ITEMS).map(i=>({id:str(i.id,20)||uid(), name:str(i.name,20)||'メニュー'}))}));
@@ -509,6 +515,49 @@ function toiIndex(k){ if(!TOI.length) return -1; const d=parseK(k); const doy=Ma
 function toiOf(k){ const i=toiIndex(k); return i<0?null:Object.assign({i},TOI[i]); }
 const battlesOn = k => D.battles.filter(b=>dk(new Date(b.at))===k).length;
 const totalMin = () => D.logs.reduce((a,l)=>a+l.min,0);
+// ---------- 魅力100（kotoba.js の charm） ----------
+const CH = Object.assign({title:'魅力100',morning:'今日、意識するのはこの{n}つ',night:'今日、できたのは？',tomorrowAsk:'明日、気をつけたいことは？',tomorrowFrom:'昨日の私から：',items:[]}, W.charm||{});
+const CHARM = (CH.items||[]).filter(x=>x&&x.t);
+const CHARM_XP = 3;
+function cycleRange(k){ // その日を含む「週」または「月」の最初と最後
+  const d=parseK(k);
+  if(D.charmCycle==='week'){ const st=addDays(d,-((d.getDay()+6)%7)); return [st, addDays(st,6)]; }
+  return [new Date(d.getFullYear(),d.getMonth(),1), new Date(d.getFullYear(),d.getMonth()+1,0)];
+}
+function charmDoneSet(k, includeToday){
+  const [st,en]=cycleRange(k), set=new Set();
+  for(let d=new Date(st); dk(d)<=dk(en); d=addDays(d,1)){ const kk=dk(d); if(!includeToday && kk>=k) break; (D.charm[kk]||[]).forEach(i=>set.add(i)); }
+  return set;
+}
+// そのひとまわりの目標数（はじめたのが途中なら、残りの日数ぶんだけ＝おためし期間）
+function charmTarget(k){
+  const [st,en]=cycleRange(k), all=Math.round((en-st)/864e5)+1;
+  const from=D.start>dk(st)?parseK(D.start):st, days=Math.round((en-from)/864e5)+1;
+  const daysLeft=Math.round((en-parseK(k))/864e5)+1;
+  const target=days>=all?CHARM.length:Math.max(1,Math.round(CHARM.length*days/all));
+  return {target, daysLeft, partial:days<all};
+}
+function charmFocus(k){
+  if(!CHARM.length) return [];
+  if(D.charmFocus[k]) return D.charmFocus[k].filter(i=>i<CHARM.length);
+  const done=charmDoneSet(k,false), {target, daysLeft}=charmTarget(k);
+  let rest=CHARM.map((_,i)=>i).filter(i=>!done.has(i));
+  const n=Math.max(3, Math.min(15, Math.ceil(Math.max(0,target-done.size)/daysLeft)||3));
+  let h=7; for(const ch of k) h=Math.imul(h^ch.charCodeAt(0),16777619);
+  const rnd=seeded(h); const pickFrom=a=>a.splice(Math.floor(rnd()*a.length),1)[0];
+  const out=[]; while(out.length<n && rest.length) out.push(pickFrom(rest));
+  const others=CHARM.map((_,i)=>i).filter(i=>!out.includes(i)); while(out.length<n && others.length) out.push(pickFrom(others));
+  out.sort((a,b)=>a-b);
+  if(k===todayK()){ D.charmFocus[k]=out; save(); }
+  return out;
+}
+function toggleCharm(k,i){
+  const a=D.charm[k]||(D.charm[k]=[]); let gain=0;
+  if(a.includes(i)) a.splice(a.indexOf(i),1); else { a.push(i); gain=CHARM_XP; }
+  if(!a.length) delete D.charm[k];
+  afterChange(gain); if(gain) beep('tiny');
+}
+function charmNoteBefore(k){ const y=dk(addDays(parseK(k),-1)); return D.charmNote[y]||''; }
 const monthKey = d => d.getFullYear()+'-'+pad(d.getMonth()+1);
 const monthMin = (mk) => D.logs.filter(l=>monthKey(new Date(l.at))===mk).reduce((a,l)=>a+l.min,0);
 function monthInfo(){
@@ -520,6 +569,7 @@ function totalXP(){
   let x=totalMin();
   for(const k in D.quests) x+=D.quests[k].length*CONFIG.xp.quest;
   for(const k in D.toi) if(D.toi[k].text) x+=CONFIG.xp.toi;
+  for(const k in D.charm) x+=D.charm[k].length*CHARM_XP;
   return x + D.battles.length*CONFIG.xp.boss;
 }
 const stageOf = xp => STAGES.reduce((a,s,i)=>xp>=s.at?i:a,0);
@@ -534,7 +584,7 @@ function mood(){
   }
   return 'normal';
 }
-const anyOn = k => dayMin(k)>0 || dayQuests(k)>0 || battlesOn(k)>0 || !!(D.toi[k]&&D.toi[k].text);
+const anyOn = k => dayMin(k)>0 || dayQuests(k)>0 || battlesOn(k)>0 || !!(D.toi[k]&&D.toi[k].text) || !!(D.charm[k]&&D.charm[k].length);
 function streak(){ let d=new Date(); if(!anyOn(dk(d))) d=addDays(d,-1); let n=0; while(anyOn(dk(d))){ n++; d=addDays(d,-1); } return n; }
 function bestStreak(){
   const ks=new Set([...D.logs.map(l=>dk(new Date(l.at))),...Object.keys(D.quests),...Object.keys(D.toi),...D.battles.map(b=>dk(new Date(b.at)))]);
@@ -890,6 +940,29 @@ function renderToday(){
     body.append(ta,el('div',{class:'btnrow',style:'justify-content:space-between;align-items:center'},mark,ok));
     s.append(fold('toi', isToday?'今日の問い':'この日の問い', saved&&saved.text?'✓':(saved&&saved.mark?'★':''), body, false));
   }
+  // 魅力100：朝は「意識する数個」、夜は「できた？」＋「明日気をつけること」
+  if(D.charmOn && CHARM.length){
+    const foc=charmFocus(viewDay), doneToday=D.charm[viewDay]||[], hour=new Date().getHours(), night=!isToday||hour>=17;
+    const body=el('div');
+    const note=charmNoteBefore(viewDay);
+    if(note) body.append(el('p',{class:'toih',style:'margin:0 0 10px'},CH.tomorrowFrom+note));
+    body.append(el('p',{class:'hint',style:'margin:0 0 6px;font-weight:700;color:var(--ink)'},night?CH.night:CH.morning.replace('{n}',foc.length)));
+    const box=el('div',{class:'items',style:'grid-template-columns:1fr'});
+    foc.forEach(i=>{ const on=doneToday.includes(i);
+      box.append(el('button',{class:'item'+(on?' on':''),style:'--g:#F59BB0',role:'checkbox','aria-checked':String(on),onclick:()=>{ toggleCharm(viewDay,i); renderToday(); }},
+        el('span',{class:'box'}),el('span',null,el('span',{style:'display:block'},CHARM[i].t),el('span',{style:'display:block;font-size:.78rem;color:var(--sub)'},(i+1)+'・'+(CHARM[i].c||''))))); });
+    body.append(box);
+    const extra=doneToday.filter(i=>!foc.includes(i));
+    if(extra.length) body.append(el('p',{class:'hint',style:'margin:8px 0 0'},'ほかにできた：'+extra.map(i=>CHARM[i].t).join('／')));
+    body.append(el('button',{class:'btn sm',style:'margin-top:8px',onclick:()=>openCharmList(viewDay)},'ほかにもできた → 100から選ぶ'));
+    if(night){
+      const tin=el('input',{class:'in',maxlength:'60',value:D.charmNote[viewDay]||'',placeholder:'例：早口にならない','aria-label':CH.tomorrowAsk});
+      tin.onchange=()=>{ const t=tin.value.trim().slice(0,60); if(t) D.charmNote[viewDay]=t; else delete D.charmNote[viewDay]; save(); toast(t?'明日の私に渡したよ':'消したよ'); };
+      body.append(el('p',{class:'hint',style:'margin:12px 0 4px;font-weight:700;color:var(--ink)'},CH.tomorrowAsk),tin);
+    }
+    const doneF=foc.filter(i=>doneToday.includes(i)).length;
+    s.append(fold('charm', CH.title, doneF+'/'+foc.length, body, true));
+  }
   // 今日のセルフハグ
   if(isToday){
     const qs=questsFor(viewDay), done=D.quests[viewDay]||[];
@@ -940,6 +1013,24 @@ function renderToday(){
   // イヤな日の部屋（小さな扉）
   const door=el('button',{class:'door',onclick:()=>showTab('quest')}); door.innerHTML=monSVG('#B49AE0')+'<span>イヤなことがあった日 →</span>'; s.append(door);
   tick();
+}
+function openCharmList(k){
+  const wrap=el('div');
+  const cycleDone=charmDoneSet(k,true);
+  let lastC='';
+  const paint=()=>{
+    wrap.innerHTML=''; lastC='';
+    const today=D.charm[k]||[];
+    wrap.append(el('p',{class:'hint',style:'margin:0 0 8px'},'タップで「今日できた」。'+(D.charmCycle==='week'?'今週':'今月')+'できた：'+charmDoneSet(k,true).size+'/'+CHARM.length));
+    CHARM.forEach((x,i)=>{
+      if(x.c!==lastC){ lastC=x.c; wrap.append(el('p',{class:'hint',style:'margin:10px 0 4px;font-weight:700'},x.c||'')); }
+      const on=today.includes(i), past=!on&&charmDoneSet(k,true).has(i);
+      wrap.append(el('button',{class:'item'+(on?' on':''),style:'--g:#F59BB0;width:100%;margin-bottom:5px'+(past?';opacity:.6':''),onclick:()=>{ toggleCharm(k,i); paint(); }},
+        el('span',{class:'box'}),el('span',null,(i+1)+'. '+x.t+(past?'（今'+(D.charmCycle==='week'?'週':'月')+'済）':''))));
+    });
+  };
+  paint();
+  modal(CH.title+' ─ ぜんぶ', wrap, [{label:'とじる',primary:true,fn:()=>{ renderAll(); }}]);
 }
 function stopTimer(){
   const r=D.running; if(!r) return;
@@ -1003,24 +1094,37 @@ async function fireRemind(){
   const [h,mi]=n.time.split(':').map(Number); const now=new Date();
   if(now.getHours()*60+now.getMinutes() < h*60+mi) return;
   const q=todayToi(), m=dayMin(todayK());
-  const ok=await showNote('きょうの問い', q+(m?'\n（きょう '+fmtMin(m)+' そだてた）':'')+(D.vision?'\n'+fill(pick(LINES.cheerIdle)):''), 'daily', {data:{open:'today'}});
+  const cf=(D.charmOn&&CHARM.length)?'\n'+CH.title+'：今日できたのは？（'+charmFocus(todayK()).filter(i=>(D.charm[todayK()]||[]).includes(i)).length+'/'+charmFocus(todayK()).length+'）':'';
+  const ok=await showNote('きょうの問い', q+(m?'\n（きょう '+fmtMin(m)+' そだてた）':'')+cf+(D.vision?'\n'+fill(pick(LINES.cheerIdle)):''), 'daily', {data:{open:'today'}});
   if(ok){ n.last=todayK(); save(); }
   syncRemindCfg();
 }
-async function syncRemindCfg(){
-  try{ const reg=await swReg(); const n=D.notify; if(reg&&reg.active) reg.active.postMessage({type:'remind-config', on:n.on, time:n.time, last:n.last, q:todayToi()});
-    if(reg && n.on && 'periodicSync' in reg){ try{ await reg.periodicSync.register('daily-remind',{minInterval:6*3600*1000}); }catch(e){} } }catch(e){}
+function amBody(){ const f=charmFocus(todayK()); const note=charmNoteBefore(todayK()); return (note?CH.tomorrowFrom+note+'\n':'')+f.slice(0,5).map(i=>'・'+CHARM[i].t).join('\n')+(f.length>5?'\n…ほか'+(f.length-5)+'つ':''); }
+async function fireAm(){
+  const n=D.notify; if(!n.amOn || !D.charmOn || !CHARM.length || !canNotify() || Notification.permission!=='granted') return;
+  if(n.amLast===todayK()) return;
+  const [h,mi]=n.amTime.split(':').map(Number); const now=new Date();
+  const cur=now.getHours()*60+now.getMinutes(); if(cur < h*60+mi || now.getHours()>=12) return;
+  const ok=await showNote(CH.morning.replace('{n}',charmFocus(todayK()).length), amBody(), 'morning', {data:{open:'today'}});
+  if(ok){ n.amLast=todayK(); save(); }
 }
+async function syncRemindCfg(){
+  try{ const reg=await swReg(); const n=D.notify; if(reg&&reg.active) reg.active.postMessage({type:'remind-config', on:n.on, time:n.time, last:n.last, q:todayToi(), amOn:n.amOn&&D.charmOn, amTime:n.amTime, amLast:n.amLast, amTitle:CH.morning.replace('{n}',charmFocus(todayK()).length), amBody:amBody()});
+    if(reg && (n.on||n.amOn) && 'periodicSync' in reg){ try{ await reg.periodicSync.register('daily-remind',{minInterval:6*3600*1000}); }catch(e){} } }catch(e){}
+}
+let amT=null;
 function scheduleRemind(){
-  clearTimeout(remindT);
-  const n=D.notify; if(!n.on){ syncRemindCfg(); return; }
+  clearTimeout(remindT); clearTimeout(amT);
+  const n=D.notify;
+  if(n.amOn){ const [ah,am]=n.amTime.split(':').map(Number); const t=new Date(); t.setHours(ah,am,0,0); if(t<=Date.now()) t.setDate(t.getDate()+1); amT=setTimeout(()=>{ fireAm(); scheduleRemind(); }, Math.min(t-Date.now(),2147000000)); fireAm(); }
+  if(!n.on){ syncRemindCfg(); return; }
   const [h,mi]=n.time.split(':').map(Number); const t=new Date(); t.setHours(h,mi,0,0);
   if(t<=Date.now()) t.setDate(t.getDate()+1);
   remindT=setTimeout(()=>{ fireRemind(); scheduleRemind(); }, Math.min(t-Date.now(), 2147000000));
   fireRemind();
 }
-document.addEventListener('visibilitychange',()=>{ if(!document.hidden){ fireRemind(); if(D.running) timerNotify(); } });
-if('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message',e=>{ const d=e.data||{}; if(d.type==='reminded'){ D.notify.last=d.date; save(); } if(d.type==='open'){ showTab(d.tab||'today'); } });
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden){ fireAm(); fireRemind(); if(D.running) timerNotify(); } });
+if('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message',e=>{ const d=e.data||{}; if(d.type==='reminded'){ D.notify.last=d.date; save(); } if(d.type==='reminded-am'){ D.notify.amLast=d.date; save(); } if(d.type==='open'){ showTab(d.tab||'today'); } });
 
 // ---------- 画面：ふりかえり ----------
 let weekOffset=0;
@@ -1125,6 +1229,23 @@ function renderReview(){
     : 'いちばん育てているのは'+WJ[best]+'曜日。'+(best!==worst?WJ[worst]+'曜日は小さめでOK、の日かも。':'')));
   s.append(c2);
 
+  // 魅力100：今週／今月のチェック表
+  if(D.charmOn && CHARM.length){
+    const k=todayK(), set=charmDoneSet(k,true), [st,en]=cycleRange(k);
+    const T=charmTarget(k), daysLeft=T.daysLeft, left=Math.max(0,T.target-set.size);
+    const card=el('div',{class:'card'},el('h3',null,CH.title+'（'+(D.charmCycle==='week'?'今週':'今月')+(T.partial?'・おためし':'')+'）'),
+      el('div',{class:'goalbar'+(left<=0?' done':'')},el('i',{style:'width:'+(set.size/CHARM.length*100)+'%'})),
+      el('p',{class:'hint',style:'margin:0 0 10px'},(left<=0?(set.size>=CHARM.length?'100個ぜんぶ達成！':'今回の目標 '+T.target+'個 達成！　'):'')+set.size+'/'+CHARM.length+(left>0?'　目標'+T.target+'個まで あと'+left+'個・残り'+daysLeft+'日（1日'+Math.ceil(left/daysLeft)+'個）':'')+(T.partial?'\n途中からはじめたので、今回は残りの日数ぶん。次の'+(D.charmCycle==='week'?'週':'月')+'から100個に。':'')));
+    const grid=el('div',{style:'display:grid;grid-template-columns:repeat(10,1fr);gap:3px'});
+    CHARM.forEach((x,i)=>grid.append(el('div',{title:(i+1)+'. '+x.t,style:'aspect-ratio:1;border-radius:4px;font-size:.6rem;display:grid;place-items:center;'+(set.has(i)?'background:#F59BB0;color:#fff':'background:var(--line);color:var(--sub)')},String(i+1))));
+    card.append(grid, el('button',{class:'btn sm',style:'margin-top:10px',onclick:()=>openCharmList(k)},'一覧でチェックする'));
+    const notDone=CHARM.map((x,i)=>i).filter(i=>!set.has(i));
+    if(notDone.length && notDone.length<=20) card.append(el('p',{class:'hint',style:'margin:10px 0 0'},'まだ：'+notDone.map(i=>(i+1)+'.'+CHARM[i].t).join('／')));
+    s.append(card);
+    // 前の週／月の結果
+    const prevK=dk(addDays(st,-1)), prevSet=charmDoneSet(prevK,true);
+    if(prevSet.size) s.append(el('p',{class:'hint',style:'text-align:center;margin:-4px 0 12px'},(D.charmCycle==='week'?'先週':'先月')+'は '+prevSet.size+'/'+CHARM.length+' できました'));
+  }
   // いまのタイプ
   const tp=currentType();
   if(tp){
@@ -1358,6 +1479,27 @@ function renderSettings(){
   }
   s.append(cn);
 
+  // 魅力100
+  if(CHARM.length){
+    const cc=el('div',{class:'card'},el('h3',null,CH.title));
+    const on=el('button',{class:'btn'+(D.charmOn?' primary':''),onclick:()=>{ D.charmOn=!D.charmOn; save(); renderSettings(); }},D.charmOn?'表示する':'表示しない');
+    const cyc=el('select',{class:'in','aria-label':'ひとまわり',style:'width:auto'});
+    [['month','1か月で100個'],['week','1週間で100個']].forEach(([v,l])=>cyc.append(el('option',{value:v,selected:D.charmCycle===v?'':false},l)));
+    cyc.onchange=()=>{ D.charmCycle=cyc.value; delete D.charmFocus[todayK()]; save(); renderAll(); };
+    cc.append(el('div',{class:'btnrow',style:'align-items:center'},on,cyc));
+    if(notifyState()!=='unsupported'){
+      const n=D.notify;
+      const am=el('button',{class:'btn sm'+(n.amOn?' primary':''),onclick:async()=>{
+        if(!n.amOn){ const p=await askNotify(); if(p!=='granted'){ toast('通知が許可されませんでした'); return; } }
+        n.amOn=!n.amOn; save(); scheduleRemind(); renderSettings(); }},n.amOn?'朝のおしらせ ON':'朝のおしらせ OFF');
+      const amT=el('input',{class:'in',type:'time',value:n.amTime,'aria-label':'朝のおしらせの時刻',style:'width:auto'});
+      amT.onchange=()=>{ n.amTime=amT.value||'07:30'; n.amLast=''; save(); scheduleRemind(); };
+      cc.append(el('div',{class:'btnrow',style:'align-items:center;margin-top:8px'},am,amT));
+    }
+    cc.append(el('p',{class:'hint',style:'margin:8px 0 0'},'朝：今日意識する数個が届く／夜：毎日のおしらせで「できた？」'));
+    s.append(cc);
+  }
+
   // 育成メニュー
   const c2=el('div',{class:'card'},el('h3',null,'育成メニュー'),el('p',{class:'hint'},'名前を変えても、これまでの記録は残ります。'));
   D.genres.forEach((g,gi)=>{
@@ -1431,7 +1573,7 @@ function renderSettings(){
     el('p',{class:'hint'},'いまの育成メニュー・目標・セルフハグだけを入れたリンクを作ります。記録やメモは入りません。受け取った人は自分の端末で自分用に育てられます。'));
   const out=el('textarea',{class:'in',readonly:'',hidden:'','aria-label':'共有リンク'});
   c4.append(el('button',{class:'btn primary',onclick:async()=>{
-    const url=location.href.split('#')[0]+'#setup='+b64e(JSON.stringify({t:D.title,m:D.goal,mg:D.monthGoal,g:D.genres.map(g=>({n:g.name,c:g.color,i:g.items.map(i=>i.name)})),q:D.questPool}));
+    const url=location.href.split('#')[0]+'#setup='+b64e(JSON.stringify({t:D.title,m:D.goal,mg:D.monthGoal,cc:D.charmCycle,g:D.genres.map(g=>({n:g.name,c:g.color,i:g.items.map(i=>i.name)})),q:D.questPool}));
     out.value=url; out.hidden=false;
     try{ await navigator.clipboard.writeText(url); toast('リンクを コピーしました'); }catch(e){ out.select(); toast('下のリンクを コピーしてね'); }
   }},'この設定のリンクを作る'),el('div',{style:'height:8px'}),out);
@@ -1531,6 +1673,7 @@ renderAll(); liveFace();
           D.title=str(p.t,24)||D.title;
           if(Number.isFinite(p.m)&&p.m>=5&&p.m<=MAX_MIN) D.goal=Math.round(p.m);
           if(Number.isFinite(p.mg)&&p.mg>0&&p.mg<=300) D.monthGoal=Math.round(p.mg);
+          if(p.cc==='week'||p.cc==='month') D.charmCycle=p.cc;
           D.genres=p.g.slice(0,MAX_GENRES).map(g=>({id:uid(),name:str(g.n,12)||'ジャンル',color:PALETTE.some(x=>x.id===g.c)?g.c:'rose',items:(Array.isArray(g.i)?g.i:[]).slice(0,MAX_ITEMS).map(n=>({id:uid(),name:str(n,20)})).filter(i=>i.name)}));
           if(Array.isArray(p.q)){ const q=p.q.map(x=>str(x,30)).filter(Boolean).slice(0,MAX_QUESTS); if(q.length) D.questPool=q; }
           D.setup=true; save(); renderAll(); if(!D.named) setTimeout(askName,50);
