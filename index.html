@@ -963,8 +963,8 @@ function renderToday(){
     const doneF=foc.filter(i=>doneToday.includes(i)).length;
     s.append(fold('charm', CH.title, doneF+'/'+foc.length, body, true));
   }
-  // 今日のセルフハグ
-  if(isToday){
+  // 今日のセルフハグ（まり判断で非表示：2026-10-25。kotoba.js の config.hugOn を true にすると戻る）
+  if(isToday && CONFIG.hugOn){
     const qs=questsFor(viewDay), done=D.quests[viewDay]||[];
     if(qs.length){
       const box=el('div',{class:'items',style:'grid-template-columns:1fr'});
@@ -1534,7 +1534,7 @@ function renderSettings(){
   s.append(c2);
 
   // ---- ここから下は「もっと見る」の中 ----
-  const more=el('div'); const moreBtn=el('button',{class:'btn',style:'display:block;margin:4px auto 14px'},'もっと見る（名前・ゴール・セルフハグ・共有・引っ越し）');
+  const more=el('div'); const moreBtn=el('button',{class:'btn',style:'display:block;margin:4px auto 14px'},'もっと見る（名前・ゴール・共有・引っ越し）');
   more.hidden=!(D.ui&&D.ui.more); moreBtn.hidden=!more.hidden;
   moreBtn.onclick=()=>{ more.hidden=false; moreBtn.hidden=true; D.ui=D.ui||{}; D.ui.more=true; save(); };
   s.append(moreBtn, more);
@@ -1551,7 +1551,8 @@ function renderSettings(){
   c1.append(el('label',{class:'f'},'ゴール（なりたい私・ひとこと）'),vis,el('div',{style:'height:8px'}),el('label',{class:'f'},'キャラの名前'),pet,el('div',{style:'height:8px'}),el('label',{class:'f'},'ゲームのタイトル（本体の上に出ます）'),ttl);
   s2.append(c1);
 
-  // クエスト
+  // クエスト（非表示中）
+  if(CONFIG.hugOn){
   const c3=el('div',{class:'card'},el('h3',null,'今日のセルフハグ（リスト）'),el('p',{class:'hint'},'この中から毎日'+CONFIG.questsPerDay+'つ、きょうの画面に出ます。'));
   D.questPool.forEach((q,qi)=>{
     const inp=el('input',{class:'in',maxlength:'30',value:q,'aria-label':'クエスト'});
@@ -1567,10 +1568,11 @@ function renderSettings(){
     c3.append(el('div',{class:'row'},add,addB));
   }
   s2.append(c3);
+  }
 
   // 共有
   const c4=el('div',{class:'card'},el('h3',null,'クライエントさんに渡す'),
-    el('p',{class:'hint'},'いまの育成メニュー・目標・セルフハグだけを入れたリンクを作ります。記録やメモは入りません。受け取った人は自分の端末で自分用に育てられます。'));
+    el('p',{class:'hint'},'いまの育成メニュー・目標だけを入れたリンクを作ります。記録やメモは入りません。受け取った人は自分の端末で自分用に育てられます。'));
   const out=el('textarea',{class:'in',readonly:'',hidden:'','aria-label':'共有リンク'});
   c4.append(el('button',{class:'btn primary',onclick:async()=>{
     const url=location.href.split('#')[0]+'#setup='+b64e(JSON.stringify({t:D.title,m:D.goal,mg:D.monthGoal,cc:D.charmCycle,g:D.genres.map(g=>({n:g.name,c:g.color,i:g.items.map(i=>i.name)})),q:D.questPool}));
